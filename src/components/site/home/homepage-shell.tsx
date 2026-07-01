@@ -1,0 +1,70 @@
+import { Suspense } from "react";
+import { HeroBanner } from "@/components/site/home/hero-banner";
+import { HeroBannerSkeleton } from "@/components/site/home/hero-banner-skeleton";
+import { BackgroundTextSection } from "@/components/site/home/background-text-section";
+import { ProductsIntro } from "@/components/site/home/products-intro";
+import { ProductFeatureSection } from "@/components/site/home/product-feature-section";
+import { SpecialitySection } from "@/components/site/home/speciality-section";
+import { HowWeDoSlider, ClientsSlider } from "@/components/site/home/logo-sliders";
+import { FaqSection } from "@/components/site/home/faq-section";
+import { TestimonialsSection } from "@/components/site/testimonials/testimonials-section";
+import { HomepageClientFix } from "@/components/site/home/homepage-client-fix";
+import { ShimmerSkeleton } from "@/components/ui/skeleton";
+import { getHomepageData } from "@/features/homepage/get-homepage-data";
+import { getTestimonialsSectionData } from "@/features/testimonials/get-testimonials-data";
+
+function SectionBlockSkeleton({ className }: { className?: string }) {
+  return <ShimmerSkeleton className={className ?? "h-48 w-full rounded-xl"} aria-hidden />;
+}
+
+export async function HomepageContent() {
+  const [{ content, categories, faqs }, testimonials] = await Promise.all([
+    getHomepageData(),
+    getTestimonialsSectionData(),
+  ]);
+
+  return (
+    <>
+      <HeroBanner hero={content.hero} />
+      <BackgroundTextSection data={content.backgroundText} />
+      <ProductsIntro data={content.productsIntro} />
+
+      {categories.map((category, index) => (
+        <ProductFeatureSection
+          key={category.id}
+          category={category}
+          reverse={index % 2 !== 0}
+          showBottomLine={index < categories.length - 1}
+        />
+      ))}
+
+      <SpecialitySection data={content.speciality} />
+      <HowWeDoSlider data={content.howWeDo} />
+      <ClientsSlider data={content.clients} />
+      <TestimonialsSection
+        title={testimonials.content.section.title}
+        subtitle={testimonials.content.section.subtitle}
+        reviews={testimonials.reviews}
+        carousel={testimonials.content.carousel}
+      />
+      <FaqSection items={faqs} />
+      <HomepageClientFix />
+    </>
+  );
+}
+
+export function HomepageShell() {
+  return (
+    <Suspense
+      fallback={
+        <>
+          <HeroBannerSkeleton />
+          <SectionBlockSkeleton className="mx-auto my-16 h-64 max-w-4xl" />
+          <SectionBlockSkeleton className="mx-auto my-16 h-40 max-w-6xl" />
+        </>
+      }
+    >
+      <HomepageContent />
+    </Suspense>
+  );
+}

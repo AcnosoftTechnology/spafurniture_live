@@ -1,0 +1,678 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  MODERATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SectionType {
+  RICH_TEXT
+  HTML
+  FEATURES
+  CTA
+  FAQ
+  CUSTOM
+}
+
+enum InquiryType {
+  GENERAL
+  PRODUCT
+  CONTACT
+}
+
+enum InquiryStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ImportJobType {
+  BLOG_CSV
+  PRODUCT_CSV
+}
+
+enum ImportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum FaqEntityType {
+  PRODUCT
+  CATEGORY
+  PAGE
+  BLOG_POST
+  HOMEPAGE
+  FAQ_GROUP
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  passwordHash  String
+  name          String
+  role          UserRole   @default(EDITOR)
+  status        UserStatus @default(ACTIVE)
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  blogPosts          BlogPost[]
+  loginActivities    LoginActivity[]
+  activityLogs       ActivityLog[]
+  mediaUploads       Media[]
+  moderatedReviews   ProductReview[] @relation("ReviewModerator")
+  moderatedComments  BlogComment[]   @relation("CommentModerator")
+  assignedInquiries  Inquiry[]       @relation("InquiryAssignee")
+  importJobs         ImportJob[]
+  passwordResets     PasswordResetToken[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LoginActivity {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String?
+  ip        String?
+  userAgent String?  @db.Text
+  device    String?
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+}
+
+model MediaFolder {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String
+  parentId  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  parent    MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children  MediaFolder[] @relation("FolderTree")
+  media     Media[]
+
+  @@unique([slug, parentId])
+}
+
+model Media {
+  id           String       @id @default(cuid())
+  filename     String
+  path         String
+  mime         String
+  size         Int
+  width        Int?
+  height       Int?
+  alt          String?
+  folderId     String?
+  webpPath     String?
+  cdnUrl       String?
+  uploadedById String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  folder       MediaFolder? @relation(fields: [folderId], references: [id])
+  uploadedBy   User?        @relation(fields: [uploadedById], references: [id])
+
+  categoryBanners  Category[] @relation("CategoryBanner")
+  categoryThumbs   Category[] @relation("CategoryThumb")
+  categoryHomepageFeatureBgs Category[] @relation("CategoryHomepageFeatureBg")
+  productBrochures Product[]  @relation("ProductBrochure")
+  productDimensionsImages Product[] @relation("ProductDimensions")
+  productFeaturesImages   Product[] @relation("ProductFeaturesImage")
+  eventImages      Event[]   @relation("EventImage")
+  blogFeatured     BlogPost[]
+  categoryGallery  CategoryGallery[]
+  productGallery   ProductGallery[]
+  ogCategories     Category[] @relation("CategoryOgImage")
+  ogProducts       Product[]  @relation("ProductOgImage")
+  ogBlogPosts      BlogPost[] @relation("BlogOgImage")
+  ogPages          Page[]     @relation("PageOgImage")
+}
+
+model Category {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  description              String?       @db.Text
+  homepageFeatureContent   String?       @db.Text
+  homepageFeatureBgMediaId String?
+  pageContent              Json?
+  bannerMediaId   String?
+  thumbMediaId    String?
+  sortOrder         Int           @default(0)
+  homepageFeatured  Boolean       @default(false)
+  homepageFeaturedSortOrder Int     @default(0)
+  showInProductNav  Boolean       @default(false)
+  menuLabel         String?
+  status            ContentStatus @default(DRAFT)
+  locale            String        @default("en-IN")
+  publishedAt       DateTime?
+  seoTitle          String?
+  metaDescription   String?       @db.Text
+  keywords          String[]      @default([])
+  canonicalUrl      String?
+  ogTitle           String?
+  ogDescription     String?       @db.Text
+  ogImageId         String?
+  twitterCard       String?         @default("summary_large_image")
+  schemaJson        Json?
+  robots            String?         @default("index,follow")
+  hreflangGroupId   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  bannerMedia  Media?            @relation("CategoryBanner", fields: [bannerMediaId], references: [id])
+  thumbMedia   Media?            @relation("CategoryThumb", fields: [thumbMediaId], references: [id])
+  homepageFeatureBgMedia Media?  @relation("CategoryHomepageFeatureBg", fields: [homepageFeatureBgMediaId], references: [id])
+  ogImage      Media?            @relation("CategoryOgImage", fields: [ogImageId], references: [id])
+  gallery      CategoryGallery[]
+  sections     CategorySection[]
+  tabs         CategoryTab[]
+  products     ProductCategory[]
+}
+
+model CategoryGallery {
+  id         String @id @default(cuid())
+  categoryId String
+  mediaId    String
+  sortOrder  Int    @default(0)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  media      Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, mediaId])
+}
+
+model CategorySection {
+  id         String      @id @default(cuid())
+  categoryId String
+  type       SectionType @default(RICH_TEXT)
+  title      String?
+  content    Json?
+  sortOrder  Int         @default(0)
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model CategoryTab {
+  id          String   @id @default(cuid())
+  categoryId  String
+  label       String
+  slug        String
+  sortOrder   Int      @default(0)
+  filterRules Json?
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, slug])
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  shortDesc       String?       @db.Text
+  dimensions      String?       @db.Text
+  dimensionsMediaId String?
+  featuresMediaId   String?
+  fullDesc        Json?
+  priceDisplay    String?
+  brochureMediaId        String?
+  brochureExternalUrl    String?
+  brochureExternalLabel  String?
+  youtubeUrl             String?
+  youtubeLabel           String?
+  featured        Boolean       @default(false)
+  status          ContentStatus @default(DRAFT)
+  sortOrder       Int           @default(0)
+  locale          String        @default("en-IN")
+  publishedAt     DateTime?
+  seoTitle        String?
+  metaDescription String?       @db.Text
+  keywords        String[]      @default([])
+  canonicalUrl    String?
+  ogTitle         String?
+  ogDescription   String?       @db.Text
+  ogImageId       String?
+  twitterCard     String?         @default("summary_large_image")
+  schemaJson      Json?
+  robots          String?         @default("index,follow")
+  hreflangGroupId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  brochureMedia Media?              @relation("ProductBrochure", fields: [brochureMediaId], references: [id])
+  dimensionsMedia Media?            @relation("ProductDimensions", fields: [dimensionsMediaId], references: [id])
+  featuresMedia   Media?            @relation("ProductFeaturesImage", fields: [featuresMediaId], references: [id])
+  ogImage       Media?              @relation("ProductOgImage", fields: [ogImageId], references: [id])
+  features      ProductFeature[]
+  attributes    ProductAttribute[]
+  gallery       ProductGallery[]
+  sections      ProductSection[]
+  tabs          ProductTab[]
+  categories    ProductCategory[]
+  relatedFrom   RelatedProduct[]  @relation("ProductRelatedFrom")
+  relatedTo     RelatedProduct[]  @relation("ProductRelatedTo")
+  reviews       ProductReview[]
+  inquiries     Inquiry[]
+}
+
+model ProductFeature {
+  id        String  @id @default(cuid())
+  productId String
+  label     String
+  value     String
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductAttribute {
+  id        String @id @default(cuid())
+  productId String
+  key       String
+  value     String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductGallery {
+  id        String  @id @default(cuid())
+  productId String
+  mediaId   String
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, mediaId])
+}
+
+model ProductSection {
+  id        String      @id @default(cuid())
+  productId String
+  type      SectionType @default(RICH_TEXT)
+  title     String?
+  content   Json?
+  sortOrder Int         @default(0)
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductTab {
+  id        String  @id @default(cuid())
+  productId String
+  label     String
+  content   Json?
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductCategory {
+  id         String  @id @default(cuid())
+  productId  String
+  categoryId String
+  isPrimary  Boolean @default(false)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+}
+
+model RelatedProduct {
+  id               String  @id @default(cuid())
+  productId        String
+  relatedProductId String
+  sortOrder        Int     @default(0)
+  product          Product @relation("ProductRelatedFrom", fields: [productId], references: [id], onDelete: Cascade)
+  relatedProduct   Product @relation("ProductRelatedTo", fields: [relatedProductId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, relatedProductId])
+}
+
+model ProductReview {
+  id             String       @id @default(cuid())
+  productId      String
+  authorName     String
+  rating         Int
+  title          String?
+  body           String?      @db.Text
+  status         ReviewStatus @default(PENDING)
+  externalSource String?
+  moderatedById  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  moderatedBy    User?        @relation("ReviewModerator", fields: [moderatedById], references: [id])
+}
+
+model FaqGroup {
+  id          String   @id @default(cuid())
+  name        String
+  /** WordPress `sp_easy_accordion` post ID — used in `[sp_easyaccordion id="6779"]` */
+  shortcodeId Int      @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       Faq[]
+}
+
+model Faq {
+  id            String        @id @default(cuid())
+  entityType    FaqEntityType
+  entityId      String
+  faqGroupId    String?
+  question      String
+  answer        String        @db.Text
+  sortOrder     Int           @default(0)
+  schemaEnabled Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  faqGroup      FaqGroup?     @relation(fields: [faqGroupId], references: [id], onDelete: Cascade)
+
+  @@index([faqGroupId])
+  @@index([entityType, entityId])
+}
+
+model BlogCategory {
+  id        String         @id @default(cuid())
+  name      String
+  slug      String         @unique
+  parentId  String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  parent    BlogCategory?  @relation("BlogCategoryTree", fields: [parentId], references: [id])
+  children  BlogCategory[] @relation("BlogCategoryTree")
+  posts     BlogPostCategory[]
+}
+
+model BlogTag {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String        @unique
+  createdAt DateTime      @default(now())
+  posts     BlogPostTag[]
+}
+
+model BlogPost {
+  id               String        @id @default(cuid())
+  title            String
+  slug             String        @unique
+  excerpt          String?       @db.Text
+  content          Json?
+  featuredMediaId  String?
+  authorId            String
+  /** WordPress `dc:creator` display name (e.g. furniturest) */
+  authorDisplayName   String?
+  status              ContentStatus @default(DRAFT)
+  publishedAt      DateTime?
+  scheduledAt      DateTime?
+  seoTitle         String?
+  metaDescription  String?       @db.Text
+  keywords         String[]      @default([])
+  canonicalUrl     String?
+  ogTitle          String?
+  ogDescription    String?       @db.Text
+  ogImageId        String?
+  twitterCard      String?         @default("summary_large_image")
+  schemaJson       Json?
+  robots           String?         @default("index,follow")
+  hreflangGroupId  String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  featuredMedia Media?             @relation(fields: [featuredMediaId], references: [id])
+  ogImage       Media?             @relation("BlogOgImage", fields: [ogImageId], references: [id])
+  author        User               @relation(fields: [authorId], references: [id])
+  categories    BlogPostCategory[]
+  tags          BlogPostTag[]
+  comments      BlogComment[]
+}
+
+model BlogPostCategory {
+  id         String       @id @default(cuid())
+  postId     String
+  categoryId String
+  post       BlogPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, categoryId])
+}
+
+model BlogPostTag {
+  id     String   @id @default(cuid())
+  postId String
+  tagId  String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+}
+
+model Event {
+  id            String        @id @default(cuid())
+  title         String
+  eventDate     DateTime
+  imageMediaId  String
+  findUsTitle   String        @default("Find Us")
+  findUsBody    String        @default("Come and find Esthetica at a selection of upcoming, shows, events and exhibitions!")
+  contactTitle  String        @default("Get in Touch!")
+  contactBody   String        @default("Call and speak to our sales team today!")
+  phone         String        @default("+91 98731 44051")
+  phoneHref     String        @default("tel:+919873144051")
+  readMoreUrl   String?
+  readMoreHtml  String?       @db.Text
+  status        ContentStatus @default(DRAFT)
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  imageMedia Media @relation("EventImage", fields: [imageMediaId], references: [id])
+
+  @@index([status, eventDate])
+}
+
+model BlogComment {
+  id            String        @id @default(cuid())
+  postId        String
+  parentId      String?
+  authorName    String
+  email         String
+  content       String        @db.Text
+  status        CommentStatus @default(PENDING)
+  ip            String?
+  userAgent     String?       @db.Text
+  pageUrl       String?
+  geoCountry    String?
+  geoRegion     String?
+  geoCity       String?
+  moderatedById String?
+  createdAt     DateTime      @default(now())
+  post          BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent        BlogComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       BlogComment[] @relation("CommentReplies")
+  moderatedBy   User?         @relation("CommentModerator", fields: [moderatedById], references: [id])
+
+  @@index([postId, parentId])
+}
+
+model Inquiry {
+  id           String        @id @default(cuid())
+  type         InquiryType   @default(GENERAL)
+  name         String
+  email        String
+  country      String?
+  phone        String?
+  company      String?
+  subject      String?
+  message      String        @db.Text
+  productId    String?
+  pageUrl      String?
+  ip           String?
+  userAgent    String?       @db.Text
+  status       InquiryStatus @default(NEW)
+  assignedToId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  product      Product?      @relation(fields: [productId], references: [id])
+  assignedTo   User?         @relation("InquiryAssignee", fields: [assignedToId], references: [id])
+}
+
+model Page {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  template        String        @default("DEFAULT")
+  content         Json?
+  status          ContentStatus @default(DRAFT)
+  publishedAt     DateTime?
+  seoTitle        String?
+  metaDescription String?       @db.Text
+  keywords        String[]      @default([])
+  canonicalUrl    String?
+  ogTitle         String?
+  ogDescription   String?       @db.Text
+  ogImageId       String?
+  twitterCard     String?         @default("summary_large_image")
+  schemaJson      Json?
+  robots          String?         @default("index,follow")
+  hreflangGroupId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  ogImage         Media?          @relation("PageOgImage", fields: [ogImageId], references: [id])
+}
+
+model Menu {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id        String     @id @default(cuid())
+  menuId    String
+  parentId  String?
+  label     String
+  url       String?
+  sortOrder Int        @default(0)
+  megaPanel Json?
+  menu      Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent    MenuItem?  @relation("MenuItemTree", fields: [parentId], references: [id])
+  children  MenuItem[] @relation("MenuItemTree")
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model ImportJob {
+  id          String          @id @default(cuid())
+  type        ImportJobType
+  filename    String
+  status      ImportJobStatus @default(PENDING)
+  stats       Json?
+  errorLog    Json?
+  createdById String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   User?           @relation(fields: [createdById], references: [id])
+}
+
+model BlockLibrary {
+  id        String   @id @default(cuid())
+  name      String
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

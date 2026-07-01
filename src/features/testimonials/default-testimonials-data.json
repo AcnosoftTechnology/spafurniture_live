@@ -1,0 +1,67 @@
+{
+  "section": {
+    "enabled": true,
+    "title": "Testimonials",
+    "subtitle": ""
+  },
+  "displayCount": 5,
+  "source": "manual",
+  "google": {
+    "enabled": false,
+    "placeId": "",
+    "apiKey": "",
+    "minRating": 1
+  },
+  "carousel": {
+    "enabled": true,
+    "autoplay": true,
+    "autoplayDelayMs": 5000,
+    "loop": true,
+    "speed": 600,
+    "slidesPerView": { "sm": 1, "md": 2, "lg": 3 },
+    "showNavigation": true,
+    "spaceBetween": 8
+  },
+  "manualReviews": [
+    {
+      "id": "1",
+      "authorName": "Jyotsna Vashisht",
+      "rating": 5,
+      "body": "Nice Products and Good Range available!",
+      "publishedAt": "2025-06-16",
+      "source": "manual"
+    },
+    {
+      "id": "2",
+      "authorName": "Wellness Studio India",
+      "rating": 5,
+      "body": "Excellent quality spa furniture. Our treatment rooms look premium and clients love the comfort.",
+      "publishedAt": "2025-05-02",
+      "source": "manual"
+    },
+    {
+      "id": "3",
+      "authorName": "Hotel Projects Team",
+      "rating": 5,
+      "body": "Professional team, timely delivery, and customization options that matched our interior design perfectly.",
+      "publishedAt": "2025-04-18",
+      "source": "manual"
+    },
+    {
+      "id": "4",
+      "authorName": "Spa Consultant",
+      "rating": 5,
+      "body": "We specify Esthetica beds for luxury spa projects. Build quality and finish are consistently top class.",
+      "publishedAt": "2025-03-09",
+      "source": "manual"
+    },
+    {
+      "id": "5",
+      "authorName": "Resort Operations",
+      "rating": 5,
+      "body": "Reliable partner for resort spa setups. After-sales support and product durability have been outstanding.",
+      "publishedAt": "2025-02-21",
+      "source": "manual"
+    }
+  ]
+}
