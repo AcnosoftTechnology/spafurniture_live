@@ -52,18 +52,19 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     };
 
     let idleCallbackId: number | undefined;
-    let timeoutId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if ("requestIdleCallback" in window) {
-      idleCallbackId = window.requestIdleCallback(() => void init(), { timeout: 2500 });
+    const scheduleIdle = window.requestIdleCallback?.bind(window);
+    if (scheduleIdle) {
+      idleCallbackId = scheduleIdle(() => void init(), { timeout: 2500 });
     } else {
-      timeoutId = window.setTimeout(() => void init(), 150);
+      timeoutId = setTimeout(() => void init(), 150);
     }
 
     return () => {
       cancelled = true;
       if (idleCallbackId !== undefined) window.cancelIdleCallback(idleCallbackId);
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
       resizeTimers.forEach((timer) => window.clearTimeout(timer));
       instance?.destroy();
       setLenis(null);
