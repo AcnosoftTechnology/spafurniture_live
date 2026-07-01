@@ -7,6 +7,8 @@ import {
   SITE_SETTING_KEY,
   type SiteConfig,
 } from "./schemas/site-config.schema";
+import { getSiteSchemaSettings } from "./get-site-schema";
+import type { SiteSchemaSettings } from "./schemas/site-schema.schema";
 
 export type NavEditorItem = {
   clientId: string;
@@ -23,6 +25,7 @@ export type AdminSettingsEditorData = {
   site: AdminSiteConfig;
   navigation: NavEditorItem[];
   sitemapMeta: SitemapMeta | null;
+  siteSchema: SiteSchemaSettings;
 };
 
 function migrateLegacySiteConfig(raw: Record<string, unknown>): SiteConfig {
@@ -195,12 +198,13 @@ export async function saveNavigationItems(items: NavEditorItem[]): Promise<NavEd
 }
 
 export async function getAdminSettingsEditorData(): Promise<AdminSettingsEditorData> {
-  const [site, navigation, sitemapMeta] = await Promise.all([
+  const [site, navigation, sitemapMeta, siteSchema] = await Promise.all([
     getSiteConfig(),
     getNavigationEditorItems(),
     getSitemapMeta(),
+    getSiteSchemaSettings(),
   ]);
-  return { site: sanitizeSiteConfigForAdmin(site), navigation, sitemapMeta };
+  return { site: sanitizeSiteConfigForAdmin(site), navigation, sitemapMeta, siteSchema };
 }
 
 export function navEditorToNavItems(items: NavEditorItem[]): NavItem[] {

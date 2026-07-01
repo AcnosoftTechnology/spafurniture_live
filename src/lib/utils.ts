@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { getBaseUrlFromEnv } from "@/lib/site-url-env";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -14,14 +16,9 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** @deprecated Prefer `getSiteBaseUrl()` in server code for schema/canonical URLs. */
 export function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
+  return getBaseUrlFromEnv();
 }
 
 export function mediaUrl(path: string | null | undefined): string {

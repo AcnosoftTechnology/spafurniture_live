@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getNextPublishedProduct, getProductBySlug } from "@/lib/services/product.service";
 import { prisma } from "@/lib/prisma";
 import { ProductDetailView } from "@/components/site/product-detail-view";
+import { JsonLd } from "@/components/site/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { buildProductPageSchemas } from "@/lib/seo/build-schemas";
 import { mediaUrl } from "@/lib/utils";
@@ -66,7 +67,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={schemaScript} />
+      <JsonLd data={schemaScript} />
       <ProductDetailView
         nextProduct={nextProduct}
         product={{

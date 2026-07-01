@@ -26,8 +26,10 @@ function parseNumericPrice(priceDisplay?: string | null): number | undefined {
   return Number.isFinite(num) && num > 0 ? num : undefined;
 }
 
-export function organizationSchema(site?: Pick<SiteConfig, "name" | "branding">) {
-  const baseUrl = getBaseUrl();
+export function organizationSchema(
+  site?: Pick<SiteConfig, "name" | "branding">,
+  baseUrl = getBaseUrl(),
+) {
   const logoPath = site?.branding?.siteLogoPath;
   return {
     "@type": "Organization",
@@ -50,8 +52,7 @@ export function websiteSchema(baseUrl = getBaseUrl()) {
   };
 }
 
-export function localBusinessSchema(site: SiteConfig) {
-  const baseUrl = getBaseUrl();
+export function localBusinessSchema(site: SiteConfig, baseUrl = getBaseUrl()) {
   const logoPath = site.branding?.siteLogoPath;
   return {
     "@type": "LocalBusiness",
@@ -91,16 +92,19 @@ export function breadcrumbSchema(items: { name: string; url: string }[]) {
 }
 
 /** Catalogue / enquiry product — no fake ecommerce Offer unless a real numeric price exists. */
-export function catalogProductSchema(product: {
-  title: string;
-  slug: string;
-  description?: string | null;
-  priceDisplay?: string | null;
-  image?: string | null;
-  images?: string[];
-  brand?: string;
-}) {
-  const url = productCanonicalUrl(product.slug);
+export function catalogProductSchema(
+  product: {
+    title: string;
+    slug: string;
+    description?: string | null;
+    priceDisplay?: string | null;
+    image?: string | null;
+    images?: string[];
+    brand?: string;
+  },
+  baseUrl = getBaseUrl(),
+) {
+  const url = productCanonicalUrl(product.slug, baseUrl);
   const price = parseNumericPrice(product.priceDisplay);
   const images = product.images?.length
     ? product.images
@@ -193,6 +197,15 @@ export function blogPostSchema(post: {
 
 export function jsonLdScript(data: unknown) {
   return { __html: JSON.stringify(data) };
+}
+
+/** Single top-level schema.org node (preferred for FAQ / Product rich results). */
+export function jsonLdDocument(node: Record<string, unknown>) {
+  const { ["@context"]: _ctx, ...rest } = node;
+  return jsonLdScript({
+    "@context": "https://schema.org",
+    ...rest,
+  });
 }
 
 /** Combine multiple schema.org nodes for a single script tag. */

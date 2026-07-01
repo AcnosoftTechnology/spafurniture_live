@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Globe, ImageIcon, Link2, Mail, Map, RefreshCw, Send, Server, Settings2, Sparkles } from "lucide-react";
+import { Globe, ImageIcon, Link2, Mail, Map, RefreshCw, Send, Server, Settings2, Sparkles, Braces } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,7 @@ export function SettingsEditor({ initialData }: { initialData: AdminSettingsEdit
   const saveAll = useCallback(async () => {
     setSaving(true);
     try {
-      const [settingsRes, navRes] = await Promise.all([
+      const [settingsRes, navRes, schemaRes] = await Promise.all([
         fetch(adminApiUrl("/api/v1/admin/settings"), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -68,6 +68,11 @@ export function SettingsEditor({ initialData }: { initialData: AdminSettingsEdit
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items: payload.navigation }),
         }),
+        fetch(adminApiUrl("/api/v1/admin/settings/schema"), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload.siteSchema),
+        }),
       ]);
 
       const settingsJson = (await settingsRes.json()) as {
@@ -75,14 +80,20 @@ export function SettingsEditor({ initialData }: { initialData: AdminSettingsEdit
         data?: AdminSettingsEditorData["site"];
       };
       const navJson = (await navRes.json()) as { error?: { message?: string }; data?: AdminSettingsEditorData["navigation"] };
+      const schemaJson = (await schemaRes.json()) as {
+        error?: { message?: string };
+        data?: AdminSettingsEditorData["siteSchema"];
+      };
 
       if (!settingsRes.ok) throw new Error(settingsJson.error?.message ?? "Failed to save settings");
       if (!navRes.ok) throw new Error(navJson.error?.message ?? "Failed to save navigation");
+      if (!schemaRes.ok) throw new Error(schemaJson.error?.message ?? "Failed to save schema settings");
 
       setPayload((prev) => ({
         ...prev,
         site: settingsJson.data ?? prev.site,
         navigation: navJson.data ?? prev.navigation,
+        siteSchema: schemaJson.data ?? prev.siteSchema,
       }));
 
       toast.success("Settings saved");
@@ -185,6 +196,10 @@ export function SettingsEditor({ initialData }: { initialData: AdminSettingsEdit
           <TabsTrigger value="features" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Sparkles className="h-3.5 w-3.5" />
             Features
+          </TabsTrigger>
+          <TabsTrigger value="schema" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Braces className="h-3.5 w-3.5" />
+            Schema
           </TabsTrigger>
           <TabsTrigger value="sitemap" className="gap-1.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
             <Map className="h-3.5 w-3.5" />
@@ -662,6 +677,43 @@ export function SettingsEditor({ initialData }: { initialData: AdminSettingsEdit
               }
             />
           </div>
+        </TabsContent>
+
+        <TabsContent value="schema" className="mt-4 space-y-4">
+          <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+            <h3 className="text-sm font-semibold text-stone-900">Global site schema (JSON-LD)</h3>
+            <p className="mt-1 text-xs text-stone-500">
+              Paste Organization, LocalBusiness, WebSite, or a combined <code className="text-[10px]">@graph</code> here.
+              When filled, auto-generated Organization schema is disabled on every page. Contact page auto LocalBusiness
+              is also skipped to avoid duplicates. Leave empty to use automatic schema from site settings.
+            </p>
+            <Textarea
+              rows={16}
+              className="mt-4 font-mono text-[11px]"
+              placeholder={`{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "Esthetica Spa Furniture",
+      "url": "https://www.spafurniture.in/"
+    },
+    {
+      "@type": "LocalBusiness",
+      "name": "Esthetica Spa Furniture",
+      "telephone": "+91-..."
+    }
+  ]
+}`}
+              value={payload.siteSchema.globalSchemaJson}
+              onChange={(e) =>
+                setPayload((prev) => ({
+                  ...prev,
+                  siteSchema: { ...prev.siteSchema, globalSchemaJson: e.target.value },
+                }))
+              }
+            />
+          </section>
         </TabsContent>
 
         <TabsContent value="sitemap" className="mt-4 space-y-4">

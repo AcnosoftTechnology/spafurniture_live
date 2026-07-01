@@ -25,6 +25,7 @@ import { EsthPageShell } from "@/components/site/layout/esth-page-shell";
 import { getCategoryCopyHtml } from "@/lib/category-page-copy";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { buildCategoryPageSchemas } from "@/lib/seo/build-schemas";
+import { JsonLd } from "@/components/site/seo/json-ld";
 import { mediaUrl } from "@/lib/utils";
 import { categoryPath } from "@/lib/paths";
 import { prisma } from "@/lib/prisma";
@@ -171,7 +172,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={schemaScript} />
+      <JsonLd data={schemaScript} />
 
       <main className="esth-products-page-main">
         <section className="esth-products-hero-section">

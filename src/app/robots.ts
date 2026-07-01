@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
-import { getBaseUrl } from "@/lib/utils";
+import { getSiteBaseUrl } from "@/lib/site-url.server";
 
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = getBaseUrl();
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const baseUrl = await getSiteBaseUrl();
   return {
     rules: {
       userAgent: "*",

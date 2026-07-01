@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getSiteFaviconMetadata } from "@/lib/favicon";
-import { getBaseUrl } from "@/lib/utils";
+import { getSiteBaseUrl } from "@/lib/site-url.server";
 
 export type SeoFields = {
   title: string;
@@ -15,8 +15,7 @@ export type SeoFields = {
   robots?: string | null;
 };
 
-function buildMetadataCore(fields: SeoFields, path = ""): Metadata {
-  const baseUrl = getBaseUrl();
+function buildMetadataCore(fields: SeoFields, path = "", baseUrl: string): Metadata {
   const title = fields.seoTitle || fields.title;
   const description = fields.metaDescription || undefined;
   const canonical = fields.canonicalUrl || `${baseUrl}${path}`;
@@ -56,13 +55,14 @@ function buildMetadataCore(fields: SeoFields, path = ""): Metadata {
   };
 }
 
-/** Sync metadata without favicon — prefer buildMetadata() for pages. */
-export function buildMetadata(fields: SeoFields, path = ""): Metadata {
-  return buildMetadataCore(fields, path);
+/** Sync metadata without favicon — prefer buildPageMetadata() for pages. */
+export function buildMetadata(fields: SeoFields, path = "", baseUrl?: string): Metadata {
+  return buildMetadataCore(fields, path, baseUrl ?? "http://localhost:3000");
 }
 
 /** Page metadata with admin favicon from site settings on every route. */
 export async function buildPageMetadata(fields: SeoFields, path = ""): Promise<Metadata> {
-  const [core, icons] = await Promise.all([Promise.resolve(buildMetadataCore(fields, path)), getSiteFaviconMetadata()]);
+  const [baseUrl, icons] = await Promise.all([getSiteBaseUrl(), getSiteFaviconMetadata()]);
+  const core = buildMetadataCore(fields, path, baseUrl);
   return icons ? { ...core, icons } : core;
 }

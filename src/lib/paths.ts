@@ -26,12 +26,12 @@ export function categoryPath(slug: string): string {
   return withTrailingSlash(`/${clean}`);
 }
 
-export function productCanonicalUrl(slug: string): string {
-  return `${getBaseUrl()}${productPath(slug)}`;
+export function productCanonicalUrl(slug: string, baseUrl = getBaseUrl()): string {
+  return `${baseUrl}${productPath(slug)}`;
 }
 
-export function categoryCanonicalUrl(slug: string): string {
-  return `${getBaseUrl()}${categoryPath(slug)}`;
+export function categoryCanonicalUrl(slug: string, baseUrl = getBaseUrl()): string {
+  return `${baseUrl}${categoryPath(slug)}`;
 }
 
 /** Monthly blog archive, e.g. /2025/11/ */
@@ -47,6 +47,6 @@ export function pagePath(slug: string): string {
   return categoryPath(clean);
 }
 
-export function pageCanonicalUrl(slug: string): string {
-  return `${getBaseUrl()}${pagePath(slug)}`;
+export function pageCanonicalUrl(slug: string, baseUrl = getBaseUrl()): string {
+  return `${baseUrl}${pagePath(slug)}`;
 }

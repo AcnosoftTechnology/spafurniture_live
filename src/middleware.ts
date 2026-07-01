@@ -7,6 +7,11 @@ function normalizePath(pathname: string) {
   return pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
 }
 
+function withPathname(response: NextResponse, pathname: string) {
+  response.headers.set("x-pathname", pathname);
+  return response;
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const normalizedPath = normalizePath(pathname);
@@ -16,28 +21,38 @@ export default auth((req) => {
 
   if (isPublicAdmin) {
     if (normalizedPath === "/admin/login" && req.auth) {
-      return NextResponse.redirect(new URL("/admin/dashboard/", req.nextUrl.origin));
+      return withPathname(
+        NextResponse.redirect(new URL("/admin/dashboard/", req.nextUrl.origin)),
+        pathname,
+      );
     }
-    return NextResponse.next();
+    return withPathname(NextResponse.next(), pathname);
   }
 
   if (isAdminRoute || isApiAdmin) {
     if (!req.auth) {
       if (isApiAdmin) {
-        return NextResponse.json(
-          { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-          { status: 401 },
+        return withPathname(
+          NextResponse.json(
+            { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
+            { status: 401 },
+          ),
+          pathname,
         );
       }
       const loginUrl = new URL("/admin/login/", req.nextUrl.origin);
       loginUrl.searchParams.set("callbackUrl", pathname.endsWith("/") ? pathname : `${pathname}/`);
-      return NextResponse.redirect(loginUrl);
+      return withPathname(NextResponse.redirect(loginUrl), pathname);
     }
   }
 
-  return NextResponse.next();
+  return withPathname(NextResponse.next(), pathname);
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/v1/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/v1/admin/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|api/|uploads/).*)",
+  ],
 };

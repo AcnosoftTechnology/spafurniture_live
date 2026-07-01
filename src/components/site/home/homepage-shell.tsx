@@ -1,17 +1,32 @@
 import { Suspense } from "react";
+import dynamic from "next/dynamic";
 import { HeroBanner } from "@/components/site/home/hero-banner";
 import { HeroBannerSkeleton } from "@/components/site/home/hero-banner-skeleton";
 import { BackgroundTextSection } from "@/components/site/home/background-text-section";
 import { ProductsIntro } from "@/components/site/home/products-intro";
 import { ProductFeatureSection } from "@/components/site/home/product-feature-section";
 import { SpecialitySection } from "@/components/site/home/speciality-section";
-import { HowWeDoSlider, ClientsSlider } from "@/components/site/home/logo-sliders";
 import { FaqSection } from "@/components/site/home/faq-section";
-import { TestimonialsSection } from "@/components/site/testimonials/testimonials-section";
 import { HomepageClientFix } from "@/components/site/home/homepage-client-fix";
 import { ShimmerSkeleton } from "@/components/ui/skeleton";
 import { getHomepageData } from "@/features/homepage/get-homepage-data";
 import { getTestimonialsSectionData } from "@/features/testimonials/get-testimonials-data";
+
+const TestimonialsSection = dynamic(
+  () =>
+    import("@/components/site/testimonials/testimonials-section").then((mod) => mod.TestimonialsSection),
+  { loading: () => <ShimmerSkeleton className="mx-auto my-16 h-64 w-full max-w-6xl" aria-hidden /> },
+);
+
+const HowWeDoSlider = dynamic(
+  () => import("@/components/site/home/logo-sliders").then((mod) => mod.HowWeDoSlider),
+  { loading: () => <ShimmerSkeleton className="mx-auto my-12 h-40 w-full max-w-5xl" aria-hidden /> },
+);
+
+const ClientsSlider = dynamic(
+  () => import("@/components/site/home/logo-sliders").then((mod) => mod.ClientsSlider),
+  { loading: () => <ShimmerSkeleton className="mx-auto my-12 h-40 w-full max-w-5xl" aria-hidden /> },
+);
 
 function SectionBlockSkeleton({ className }: { className?: string }) {
   return <ShimmerSkeleton className={className ?? "h-48 w-full rounded-xl"} aria-hidden />;

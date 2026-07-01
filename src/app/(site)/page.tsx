@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { HomepageShell } from "@/components/site/home/homepage-shell";
-import { getHomepageFaqs, getHomepageSeo } from "@/features/homepage/get-homepage-data";
+import { getHomepageSeo } from "@/features/homepage/get-homepage-data";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { buildHomepageSchemas } from "@/lib/seo/build-schemas";
 
 export const revalidate = 3600;
 
@@ -25,13 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
   );
 }
 
-export default async function HomePage() {
-  const faqs = await getHomepageFaqs();
-
-  return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={buildHomepageSchemas(faqs)} />
-      <HomepageShell />
-    </>
-  );
+export default function HomePage() {
+  return <HomepageShell />;
 }

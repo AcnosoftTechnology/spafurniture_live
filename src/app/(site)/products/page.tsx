@@ -3,6 +3,7 @@ import { listCategoriesForProductNav } from "@/lib/services/category.service";
 import { buildProductNavCategories } from "@/lib/product-nav-categories";
 import { CategoryNav } from "@/components/site/category-nav";
 import { EsthPageShell } from "@/components/site/layout/esth-page-shell";
+import { JsonLd } from "@/components/site/seo/json-ld";
 import {
   ProductsInfiniteGrid,
   PRODUCTS_PAGE_SIZE,
@@ -100,12 +101,11 @@ export default async function ProductsPage() {
     featuredCategories = [];
   }
 
+  const schemaScript = await buildProductsIndexSchemas(gridProducts);
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={buildProductsIndexSchemas(gridProducts)}
-      />
+      <JsonLd data={schemaScript} />
       <main className="esth-products-page-main">
       <section className="esth-products-hero-section">
         <EsthPageShell>

@@ -201,13 +201,15 @@ export function SeoScorePanel({
       </div>
 
       <div className="space-y-2 border-t border-stone-100 pt-3">
-        <Label className="text-xs">Extra schema JSON (optional)</Label>
+        <Label className="text-xs">Manual schema JSON (optional)</Label>
         <p className="text-[10px] text-stone-500">
-          Auto schema (Product, FAQ, Breadcrumb, etc.) is generated from page content. Add extra JSON-LD here only if needed.
+          When filled, this replaces all auto-generated schema on this page (Product, Breadcrumb, FAQ, etc.). Leave empty
+          to use automatic schema from page content.
         </p>
         <Textarea
-          rows={4}
+          rows={6}
           className="font-mono text-[10px]"
+          placeholder='{ "@type": "Product", "name": "..." }'
           value={value.schemaJson ?? ""}
           onChange={(e) => onChange({ ...value, schemaJson: e.target.value })}
         />

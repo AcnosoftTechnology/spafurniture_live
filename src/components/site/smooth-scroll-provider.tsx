@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import Lenis from "lenis";
+import type Lenis from "lenis";
 
 const LenisContext = createContext<Lenis | null>(null);
 
@@ -18,35 +18,54 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) return;
-
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
+    if (reducedMotion || isTouch) return;
 
-    const instance = new Lenis({
-      smoothWheel: true,
-      lerp: 0.09,
-      wheelMultiplier: 1.65,
-      touchMultiplier: 1.35,
-      // Keep Lenis scroll position aligned with touch on phones.
-      syncTouch: isTouch,
-      autoRaf: true,
-      anchors: {
-        duration: 0.95,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      },
-      stopInertiaOnNavigate: true,
-    });
+    let instance: Lenis | null = null;
+    let cancelled = false;
+    let resizeTimers: number[] = [];
 
-    const resize = () => instance.resize();
-    resize();
-    requestAnimationFrame(resize);
-    const resizeTimers = [120, 450, 1200].map((ms) => window.setTimeout(resize, ms));
+    const init = async () => {
+      const { default: LenisCtor } = await import("lenis");
+      if (cancelled) return;
 
-    setLenis(instance);
+      instance = new LenisCtor({
+        smoothWheel: true,
+        lerp: 0.09,
+        wheelMultiplier: 1.65,
+        touchMultiplier: 1.35,
+        syncTouch: false,
+        autoRaf: true,
+        anchors: {
+          duration: 0.95,
+          easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        },
+        stopInertiaOnNavigate: true,
+      });
+
+      const resize = () => instance?.resize();
+      resize();
+      requestAnimationFrame(resize);
+      resizeTimers = [120, 450, 1200].map((ms) => window.setTimeout(resize, ms));
+
+      setLenis(instance);
+    };
+
+    let idleCallbackId: number | undefined;
+    let timeoutId: number | undefined;
+
+    if ("requestIdleCallback" in window) {
+      idleCallbackId = window.requestIdleCallback(() => void init(), { timeout: 2500 });
+    } else {
+      timeoutId = window.setTimeout(() => void init(), 150);
+    }
 
     return () => {
+      cancelled = true;
+      if (idleCallbackId !== undefined) window.cancelIdleCallback(idleCallbackId);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
       resizeTimers.forEach((timer) => window.clearTimeout(timer));
-      instance.destroy();
+      instance?.destroy();
       setLenis(null);
     };
   }, []);

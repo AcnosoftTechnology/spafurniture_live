@@ -4,14 +4,19 @@ import {
   catalogProductSchema,
   faqSchema,
   itemListSchema,
+  jsonLdDocument,
   jsonLdGraph,
   localBusinessSchema,
+  organizationSchema,
   webPageSchema,
   websiteSchema,
   type SchemaNode,
 } from "@/lib/seo/schema";
 import { resolveCategoryFaqsForSchema, resolveProductFaqsForSchema } from "@/lib/seo/resolve-faqs";
-import { getBaseUrl, mediaUrl } from "@/lib/utils";
+import { manualSchemaScript } from "@/lib/seo/manual-schema";
+import { isGlobalManualSchemaActive } from "@/features/settings/get-site-schema";
+import { getSiteBaseUrl } from "@/lib/site-url.server";
+import { mediaUrl } from "@/lib/utils";
 import { categoryCanonicalUrl, productCanonicalUrl } from "@/lib/paths";
 import { tiptapToPlainText } from "@/lib/seo/tiptap-plain";
 
@@ -34,12 +39,50 @@ function appendExtraSchema(nodes: SchemaNode[], extra?: unknown) {
   nodes.push(extra as SchemaNode);
 }
 
-export function buildHomepageSchemas(faqs: Array<{ question: string; answer: string; schemaEnabled?: boolean }>) {
-  const baseUrl = getBaseUrl();
-  const nodes: SchemaNode[] = [websiteSchema(baseUrl)];
+export async function buildSiteLayoutSchemas(
+  site: import("@/features/settings/schemas/site-config.schema").SiteConfig,
+  baseUrl: string,
+  globalSchemaJson: string,
+  homepageFaqs?: Array<{ question: string; answer: string; schemaEnabled?: boolean }>,
+) {
+  const manual = manualSchemaScript(globalSchemaJson);
+  if (manual) return [manual];
+
+  const scripts: { __html: string }[] = [jsonLdDocument(organizationSchema(site, baseUrl))];
+
+  const globalManual = await isGlobalManualSchemaActive();
+  if (!globalManual) {
+    scripts.push(jsonLdDocument(websiteSchema(baseUrl)));
+  }
+
+  if (homepageFaqs?.length) {
+    const schemaFaqs = homepageFaqs.filter((f) => f.schemaEnabled !== false);
+    if (schemaFaqs.length) {
+      scripts.push(jsonLdDocument(faqSchema(schemaFaqs)));
+    }
+  }
+
+  return scripts;
+}
+
+/** @deprecated Use buildSiteLayoutSchemas — returns first script only. */
+export async function buildSiteLayoutSchema(
+  site: import("@/features/settings/schemas/site-config.schema").SiteConfig,
+  baseUrl: string,
+  globalSchemaJson: string,
+  homepageFaqs?: Array<{ question: string; answer: string; schemaEnabled?: boolean }>,
+) {
+  const scripts = await buildSiteLayoutSchemas(site, baseUrl, globalSchemaJson, homepageFaqs);
+  return scripts[0] ?? jsonLdDocument(organizationSchema(site, baseUrl));
+}
+
+/** Homepage-only extras (e.g. streamed in page) — prefer layout `buildSiteLayoutSchema` with FAQs. */
+export async function buildHomepageSchemas(
+  faqs: Array<{ question: string; answer: string; schemaEnabled?: boolean }>,
+) {
   const schemaFaqs = faqs.filter((f) => f.schemaEnabled !== false);
-  if (schemaFaqs.length) nodes.push(faqSchema(schemaFaqs));
-  return jsonLdGraph(...nodes);
+  if (!schemaFaqs.length) return null;
+  return jsonLdDocument(faqSchema(schemaFaqs));
 }
 
 export async function buildProductPageSchemas(product: {
@@ -52,28 +95,34 @@ export async function buildProductPageSchemas(product: {
   schemaJson?: unknown;
   gallery: Array<{ media: { path: string } }>;
 }) {
-  const baseUrl = getBaseUrl();
+  const manual = manualSchemaScript(product.schemaJson);
+  if (manual) return manual;
+
+  const baseUrl = await getSiteBaseUrl();
   const images = product.gallery
     .map((g) => `${baseUrl}${mediaUrl(g.media.path)}`)
     .filter(Boolean);
 
   const nodes: SchemaNode[] = [
-    catalogProductSchema({
-      title: product.title,
-      slug: product.slug,
-      description: productDescription(product),
-      images,
-      image: images[0],
-    }),
+    catalogProductSchema(
+      {
+        title: product.title,
+        slug: product.slug,
+        description: productDescription(product),
+        images,
+        image: images[0],
+      },
+      baseUrl,
+    ),
     breadcrumbSchema([
       { name: "Home", url: `${baseUrl}/` },
       { name: "Products", url: `${baseUrl}/products/` },
-      { name: product.title, url: productCanonicalUrl(product.slug) },
+      { name: product.title, url: productCanonicalUrl(product.slug, baseUrl) },
     ]),
     webPageSchema({
       name: product.title,
       description: productDescription(product),
-      url: productCanonicalUrl(product.slug),
+      url: productCanonicalUrl(product.slug, baseUrl),
     }),
   ];
 
@@ -83,7 +132,6 @@ export async function buildProductPageSchemas(product: {
   });
   if (faqs.length) nodes.push(faqSchema(faqs));
 
-  appendExtraSchema(nodes, product.schemaJson);
   return jsonLdGraph(...nodes);
 }
 
@@ -98,16 +146,16 @@ export async function buildCategoryPageSchemas(
   },
   products: Array<{ title: string; slug: string }>,
 ) {
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getSiteBaseUrl();
   const nodes: SchemaNode[] = [
     webPageSchema({
       name: category.title,
       description: category.description ?? undefined,
-      url: categoryCanonicalUrl(category.slug),
+      url: categoryCanonicalUrl(category.slug, baseUrl),
     }),
     breadcrumbSchema([
       { name: "Home", url: `${baseUrl}/` },
-      { name: category.title, url: categoryCanonicalUrl(category.slug) },
+      { name: category.title, url: categoryCanonicalUrl(category.slug, baseUrl) },
     ]),
   ];
 
@@ -117,7 +165,7 @@ export async function buildCategoryPageSchemas(
         name: `${category.title} products`,
         items: products.map((p) => ({
           name: p.title,
-          url: productCanonicalUrl(p.slug),
+          url: productCanonicalUrl(p.slug, baseUrl),
         })),
       }),
     );
@@ -130,10 +178,10 @@ export async function buildCategoryPageSchemas(
   return jsonLdGraph(...nodes);
 }
 
-export function buildProductsIndexSchemas(
+export async function buildProductsIndexSchemas(
   products: Array<{ title: string; slug: string }>,
 ) {
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getSiteBaseUrl();
   return jsonLdGraph(
     webPageSchema({
       name: "Our Products",
@@ -149,14 +197,16 @@ export function buildProductsIndexSchemas(
       name: "Spa furniture catalogue",
       items: products.map((p) => ({
         name: p.title,
-        url: productCanonicalUrl(p.slug),
+        url: productCanonicalUrl(p.slug, baseUrl),
       })),
     }),
   );
 }
 
-export function buildContactPageSchemas(site: SiteConfig) {
-  const baseUrl = getBaseUrl();
+export async function buildContactPageSchemas(site: SiteConfig) {
+  if (await isGlobalManualSchemaActive()) return null;
+
+  const baseUrl = await getSiteBaseUrl();
   return jsonLdGraph(
     webPageSchema({
       name: "Contact Us",
@@ -167,6 +217,6 @@ export function buildContactPageSchemas(site: SiteConfig) {
       { name: "Home", url: `${baseUrl}/` },
       { name: "Contact", url: `${baseUrl}/contact-us/` },
     ]),
-    localBusinessSchema(site),
+    localBusinessSchema(site, baseUrl),
   );
 }

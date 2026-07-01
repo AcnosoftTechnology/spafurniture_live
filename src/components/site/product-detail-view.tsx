@@ -14,7 +14,6 @@ import { ContentRenderer } from "@/components/site/content-renderer";
 import { parseYoutubeVideoId } from "@/lib/youtube";
 import { mediaUrl } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-const MIN_SHIMMER_MS = 750;
 
 export type ProductDetailData = {
   id: string;
@@ -103,7 +102,6 @@ export function ProductDetailView({
   const [sectionImage, setSectionImage] = useState<SectionImageState | null>(null);
   const [openSection, setOpenSection] = useState<SectionId | null>("description");
   const [pageReady, setPageReady] = useState(false);
-  const [contentReady, setContentReady] = useState(false);
   const slides = product.gallery.map((g) => ({
     id: g.id,
     path: g.path,
@@ -257,17 +255,13 @@ const featuresContent =
   }
 
   const handleCarouselReady = useCallback(() => {
-    setContentReady(true);
+    setPageReady(true);
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setPageReady(true), MIN_SHIMMER_MS);
-    return () => window.clearTimeout(timer);
+    const fallback = window.setTimeout(() => setPageReady(true), 400);
+    return () => window.clearTimeout(fallback);
   }, []);
-
-  useEffect(() => {
-    if (contentReady) setPageReady(true);
-  }, [contentReady]);
 
   return (
     <div className="detailShell detailShell--page">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminProviders } from "@/components/providers/admin-providers";
 import { getSiteFaviconMetadata } from "@/lib/favicon";
 import { getSiteConfig } from "@/lib/site-settings";
 
@@ -11,9 +12,11 @@ export default async function AdminPanelLayout({ children }: { children: React.R
   const site = await getSiteConfig();
 
   return (
-    <div className="flex min-h-screen bg-stone-50 dark:bg-stone-950">
-      <AdminSidebar site={site} />
-      <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
-    </div>
+    <AdminProviders>
+      <div className="flex min-h-screen bg-stone-50 dark:bg-stone-950">
+        <AdminSidebar site={site} />
+        <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
+      </div>
+    </AdminProviders>
   );
 }

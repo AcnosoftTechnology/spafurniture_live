@@ -11,6 +11,7 @@ import {
 import { BlogPostDetail } from "@/components/site/blog/blog-post-detail";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { blogPostSchema, breadcrumbSchema, jsonLdGraph } from "@/lib/seo/schema";
+import { JsonLd } from "@/components/site/seo/json-ld";
 import { getBaseUrl, mediaUrl } from "@/lib/utils";
 import { getSiteConfig } from "@/lib/site-settings";
 import { blogPostPath, blogIndexPath } from "@/lib/blog-paths";
@@ -54,26 +55,25 @@ export async function BlogPostPublicPage({ slug: rawSlug }: { slug: string }) {
   const social = site?.social?.length ? site.social : [];
   const postUrl = `${baseUrl}${blogPostPath(post.slug)}`;
 
+  const postSchema = jsonLdGraph(
+    blogPostSchema({
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt,
+      publishedAt: post.publishedAt,
+      authorName: authorLabel,
+      image: featuredSrc ? `${baseUrl}${featuredSrc}` : undefined,
+    }),
+    breadcrumbSchema([
+      { name: "Home", url: `${baseUrl}/` },
+      { name: "Blog", url: `${baseUrl}${blogIndexPath()}` },
+      { name: post.title, url: postUrl },
+    ]),
+  );
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={jsonLdGraph(
-          blogPostSchema({
-            title: post.title,
-            slug: post.slug,
-            excerpt: post.excerpt,
-            publishedAt: post.publishedAt,
-            authorName: authorLabel,
-            image: featuredSrc ? `${baseUrl}${featuredSrc}` : undefined,
-          }),
-          breadcrumbSchema([
-            { name: "Home", url: `${baseUrl}/` },
-            { name: "Blog", url: `${baseUrl}${blogIndexPath()}` },
-            { name: post.title, url: postUrl },
-          ]),
-        )}
-      />
+      <JsonLd data={postSchema} />
       <BlogPostDetail
         post={{
           id: post.id,
