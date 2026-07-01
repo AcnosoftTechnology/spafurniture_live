@@ -1,7 +1,10 @@
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
+
+const require = createRequire(import.meta.url);
 
 export type MigrationItemStatus = "applied" | "pending" | "failed";
 
@@ -38,11 +41,50 @@ type AppliedMigrationRow = {
   applied_steps_count: number | null;
 };
 
-const MIGRATIONS_DIR = path.join(process.cwd(), "prisma", "migrations");
+const MIGRATIONS_DIR = path.join(resolveProjectRoot(), "prisma", "migrations");
 
-function prismaBinaryPath() {
+function resolveProjectRoot() {
+  const cwd = process.cwd();
+  const standaloneSuffix = `${path.sep}.next${path.sep}standalone`;
+  if (cwd.endsWith(standaloneSuffix)) {
+    return path.resolve(cwd, "..", "..");
+  }
+  return cwd;
+}
+
+function prismaCliCandidates(projectRoot: string) {
   const bin = process.platform === "win32" ? "prisma.cmd" : "prisma";
-  return path.join(process.cwd(), "node_modules", ".bin", bin);
+  const candidates = [
+    path.join(projectRoot, "node_modules", ".bin", bin),
+    path.join(projectRoot, "node_modules", "prisma", "build", "index.js"),
+  ];
+
+  try {
+    const pkg = require.resolve("prisma/package.json", { paths: [projectRoot] });
+    candidates.push(path.join(path.dirname(pkg), "build", "index.js"));
+  } catch {
+    // prisma package not installed in this project root
+  }
+
+  return [...new Set(candidates)];
+}
+
+async function resolvePrismaCli(): Promise<{ command: string; argsPrefix: string[] } | null> {
+  const projectRoot = resolveProjectRoot();
+
+  for (const candidate of prismaCliCandidates(projectRoot)) {
+    try {
+      await fs.access(candidate);
+      if (candidate.endsWith(".js")) {
+        return { command: process.execPath, argsPrefix: [candidate] };
+      }
+      return { command: candidate, argsPrefix: [] };
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return null;
 }
 
 export function isWebMigrateEnabled() {
@@ -70,35 +112,38 @@ async function readAppliedMigrations(): Promise<AppliedMigrationRow[]> {
 }
 
 async function prismaCliExists() {
-  try {
-    await fs.access(prismaBinaryPath());
-    return true;
-  } catch {
-    return false;
-  }
+  return (await resolvePrismaCli()) !== null;
 }
 
 function runPrismaCommand(args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(prismaBinaryPath(), args, {
-      cwd: process.cwd(),
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    void (async () => {
+      const cli = await resolvePrismaCli();
+      if (!cli) {
+        resolve({ stdout: "", stderr: "Prisma CLI not found.", code: 1 });
+        return;
+      }
 
-    let stdout = "";
-    let stderr = "";
+      const child = spawn(cli.command, [...cli.argsPrefix, ...args], {
+        cwd: resolveProjectRoot(),
+        env: process.env,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
 
-    child.stdout?.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-    child.stderr?.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      resolve({ stdout, stderr, code: code ?? 1 });
-    });
+      let stdout = "";
+      let stderr = "";
+
+      child.stdout?.on("data", (chunk) => {
+        stdout += chunk.toString();
+      });
+      child.stderr?.on("data", (chunk) => {
+        stderr += chunk.toString();
+      });
+      child.on("error", reject);
+      child.on("close", (code) => {
+        resolve({ stdout, stderr, code: code ?? 1 });
+      });
+    })().catch(reject);
   });
 }
 
