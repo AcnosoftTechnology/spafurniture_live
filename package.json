@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "dev:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop-next-dev.ps1",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build && node scripts/copy-standalone-assets.mjs",
     "start": "next start",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
