@@ -7486,16 +7486,21 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 }
 
 .esth-events-banner{
-  position:relative;
   width:100%;
-  min-height:clamp(220px, 32vw, 420px);
+  min-height: inherit;
+  position: inherit;
   overflow:hidden;
   background:#f3ece6;
 }
 
 .esth-events-banner-media{
-  position:absolute;
+  /* position:absolute; */
+  position:inherit;
   inset:0;
+}
+
+.esth-events-banner-media img{
+ position: inherit!important;
 }
 
 .esth-events-banner-img{
