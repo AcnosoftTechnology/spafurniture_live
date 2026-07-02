@@ -32,6 +32,20 @@ function stripWpShortcodes(raw: string): string {
 }
 
 /** Pulls the SEO copy block from a WP Visual Composer category page export. */
+/** Category SEO copy must not add a second page-level h1 (Safari Reader + a11y). */
+export function normalizeCategoryCopyHtml(html: string): string {
+  let out = html
+    .replace(/<\/?html[^>]*>/gi, "")
+    .replace(/<\/?body[^>]*>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "");
+
+  out = out.replace(/<h1(\s[^>]*)?>/i, '<h2 class="esth-products-copy-lead"$1>');
+  out = out.replace(/<h1(\s[^>]*)?>/gi, "<h2$1>");
+  out = out.replace(/<\/h1>/gi, "</h2>");
+
+  return out.trim();
+}
+
 export function extractCategorySeoHtml(raw: string): string | null {
   if (!raw?.trim()) return null;
 
@@ -99,13 +113,15 @@ export async function getCategoryCopyHtml(
   categorySlug: string,
   category?: { description?: string | null; pageContent?: unknown } | null,
 ): Promise<string | null> {
+  const finalize = (html: string) => sanitizeRichHtml(normalizeCategoryCopyHtml(html));
+
   if (category?.description?.trim()) {
-    return sanitizeRichHtml(category.description.trim());
+    return finalize(category.description.trim());
   }
 
   if (typeof category?.pageContent === "string" && category.pageContent.trim()) {
     const extracted = extractCategorySeoHtml(category.pageContent);
-    if (extracted) return sanitizeRichHtml(extracted);
+    if (extracted) return finalize(extracted);
   }
 
   for (const pageSlug of pageSlugsForCategory(categorySlug)) {
@@ -128,7 +144,7 @@ export async function getCategoryCopyHtml(
     if (!raw) continue;
 
     const extracted = extractCategorySeoHtml(raw);
-    if (extracted) return sanitizeRichHtml(extracted);
+    if (extracted) return finalize(extracted);
   }
 
   return null;

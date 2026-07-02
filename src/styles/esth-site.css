@@ -3762,21 +3762,21 @@ body:has(.esth-youtube-modal[data-state="open"]) .esth-floating-contact{
   }
 }
 
-.esth-products-copy-prose h1{
-    color: #43332b;
-    text-align: justify;
-    margin-bottom: 14px;
-    font-weight: 400;
-    font-size: 44px;
-    line-height: 1.2;
-}
-
 .esth-products-copy-prose h2{
     color: #5a3f1f;
     margin: 28px 0 12px;
     font-weight: 400;
     line-height: 1.45;
     font-size: clamp(22px, 2.6vw, 30px);
+}
+
+.esth-products-copy-prose h2.esth-products-copy-lead{
+    color: #43332b;
+    text-align: justify;
+    margin-bottom: 14px;
+    font-weight: 400;
+    font-size: 44px;
+    line-height: 1.2;
 }
 
 .esth-products-copy-prose h3{
