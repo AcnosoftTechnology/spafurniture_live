@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ShowsExhibitionsPageView } from "@/components/site/events/shows-exhibitions-page-view";
 import { getShowsExhibitionsPageData } from "@/features/shows-exhibitions/get-shows-exhibitions-data";
+import { defaultEventSidebar, eventSidebarSchema } from "@/features/events/schemas/event-sidebar.schema";
 import { countEvents, listEvents } from "@/lib/services/event.service";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { SHOWS_EXHIBITIONS_INDEX_PATH } from "@/lib/shows-exhibitions-paths";
@@ -58,6 +59,18 @@ export default async function ShowsAndExhibitionsPage({ searchParams }: PageProp
     redirect(totalPages > 1 ? `${SHOWS_EXHIBITIONS_INDEX_PATH}?page=${totalPages}` : SHOWS_EXHIBITIONS_INDEX_PATH);
   }
 
+  const firstEvent = events[0];
+  const sidebar = firstEvent
+    ? eventSidebarSchema.parse({
+        findUsTitle: firstEvent.findUsTitle,
+        findUsBody: firstEvent.findUsBody,
+        contactTitle: firstEvent.contactTitle,
+        contactBody: firstEvent.contactBody,
+        phone: firstEvent.phone,
+        phoneHref: firstEvent.phoneHref,
+      })
+    : defaultEventSidebar;
+
   return (
     <Suspense fallback={null}>
       <ShowsExhibitionsPageView
@@ -66,6 +79,7 @@ export default async function ShowsAndExhibitionsPage({ searchParams }: PageProp
         bannerWebpPath={pageData.bannerWebpPath}
         currentPage={currentPage}
         totalPages={totalPages}
+        sidebar={sidebar}
         events={events.map((event) => ({
           id: event.id,
           title: event.title,
@@ -73,14 +87,6 @@ export default async function ShowsAndExhibitionsPage({ searchParams }: PageProp
           imageWebpPath: event.imageMedia.webpPath,
           readMoreUrl: event.readMoreUrl,
           readMoreHtml: event.readMoreHtml,
-          sidebar: {
-            findUsTitle: event.findUsTitle,
-            findUsBody: event.findUsBody,
-            contactTitle: event.contactTitle,
-            contactBody: event.contactBody,
-            phone: event.phone,
-            phoneHref: event.phoneHref,
-          },
         }))}
       />
     </Suspense>

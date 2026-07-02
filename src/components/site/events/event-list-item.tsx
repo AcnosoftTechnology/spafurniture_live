@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { mediaUrl } from "@/lib/utils";
 import { EventReadMoreModal } from "@/components/site/events/event-read-more-modal";
-import type { EventSidebar } from "@/features/events/schemas/event-sidebar.schema";
 
 export type ShowsEventItem = {
   id: string;
@@ -14,7 +13,6 @@ export type ShowsEventItem = {
   imageWebpPath?: string | null;
   readMoreUrl?: string | null;
   readMoreHtml?: string | null;
-  sidebar: EventSidebar;
 };
 
 type EventListItemProps = {
@@ -30,29 +28,15 @@ function hasReadMoreHtml(html?: string | null) {
 
 export function EventListItem({ event }: EventListItemProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const { sidebar } = event;
   const hasLink = Boolean(event.readMoreUrl?.trim());
   const hasHtml = hasReadMoreHtml(event.readMoreHtml);
   const showReadMore = hasLink || hasHtml;
 
   return (
     <article className="esth-events-item">
-      <div className="esth-events-item-grid">
-        <aside className="esth-events-sidebar">
-          <h2 className="esth-events-sidebar-title">{sidebar.findUsTitle}</h2>
-          <p className="esth-events-sidebar-copy">{sidebar.findUsBody}</p>
-          <hr className="esth-events-sidebar-rule" />
-          <h3 className="esth-events-sidebar-title">{sidebar.contactTitle}</h3>
-          <p className="esth-events-sidebar-copy esth-events-sidebar-copy--last">{sidebar.contactBody}</p>
-          <a href={sidebar.phoneHref || `tel:${sidebar.phone}`} className="esth-events-sidebar-phone">
-            {sidebar.phone}
-          </a>
-        </aside>
-
-        <div className="esth-events-item-main">
-          <h2 className="esth-events-item-title">{event.title}</h2>
-          <hr className="esth-events-item-rule" />
-          <div className="esth-events-item-body">
+      <h2 className="esth-events-item-title">{event.title}</h2>
+      <hr className="esth-events-item-rule" />
+      <div className="esth-events-item-body">
             <div className="esth-events-item-image-wrap">
               <Image
                 src={mediaUrl(event.imageWebpPath ?? event.imagePath)}
@@ -93,9 +77,6 @@ export function EventListItem({ event }: EventListItemProps) {
                 )}
               </div>
             ) : null}
-          </div>
-          <hr className="esth-events-item-rule esth-events-item-rule--bottom" />
-        </div>
       </div>
     </article>
   );

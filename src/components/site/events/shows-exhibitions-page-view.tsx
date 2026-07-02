@@ -2,7 +2,9 @@ import Image from "next/image";
 import { EsthPageShell } from "@/components/site/layout/esth-page-shell";
 import { ShowsExhibitionsPagination } from "@/components/site/events/shows-exhibitions-pagination";
 import { EventListItem, type ShowsEventItem } from "@/components/site/events/event-list-item";
+import { EventSidebar } from "@/components/site/events/event-sidebar";
 import type { ShowsExhibitionsPageContent } from "@/features/shows-exhibitions/schemas/shows-exhibitions-content.schema";
+import type { EventSidebar as EventSidebarContent } from "@/features/events/schemas/event-sidebar.schema";
 import { mediaUrl } from "@/lib/utils";
 
 type ShowsExhibitionsPageViewProps = {
@@ -10,6 +12,7 @@ type ShowsExhibitionsPageViewProps = {
   bannerPath: string | null;
   bannerWebpPath?: string | null;
   events: ShowsEventItem[];
+  sidebar: EventSidebarContent;
   currentPage: number;
   totalPages: number;
 };
@@ -19,6 +22,7 @@ export function ShowsExhibitionsPageView({
   bannerPath,
   bannerWebpPath,
   events,
+  sidebar,
   currentPage,
   totalPages,
 }: ShowsExhibitionsPageViewProps) {
@@ -49,15 +53,19 @@ export function ShowsExhibitionsPageView({
           <h1 className="esth-events-title">{content.pageHeading}</h1>
         </header>
 
-        <div className="esth-events-list">
-          {events.length === 0 ? (
-            <p className="esth-events-empty">No upcoming events at the moment. Please check back soon.</p>
-          ) : (
-            events.map((event) => <EventListItem key={event.id} event={event} />)
-          )}
-        </div>
+        <div className="esth-events-page-grid">
+          <EventSidebar sidebar={sidebar} />
 
-        <ShowsExhibitionsPagination currentPage={currentPage} totalPages={totalPages} />
+          <div className="esth-events-list">
+            {events.length === 0 ? (
+              <p className="esth-events-empty">No upcoming events at the moment. Please check back soon.</p>
+            ) : (
+              events.map((event) => <EventListItem key={event.id} event={event} />)
+            )}
+
+            <ShowsExhibitionsPagination currentPage={currentPage} totalPages={totalPages} />
+          </div>
+        </div>
       </EsthPageShell>
     </main>
   );

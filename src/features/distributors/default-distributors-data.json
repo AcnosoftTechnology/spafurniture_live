@@ -1,0 +1,13 @@
+{
+  "intro": {
+    "eyebrow": "Contact Us",
+    "title": "Get in Touch",
+    "body": "<p>If you want to get in touch with our Local Distributor in your country then do not hesitate to contact us by submitting the form below.</p>"
+  },
+  "sidebar": {
+    "heading": "We have Distributors in",
+    "regionsHtml": "<ul><li>United States Of America</li><li>United Kingdom</li><li>U.A.E (Dubai, Abu Dhabi &amp; Al Ain)</li><li>Saudi Arabia (Jeddah, Riyadh &amp; Al Khobar)</li><li>Qatar</li><li>Bahrain</li><li>Lebanon</li><li>Oman</li><li>South Africa</li><li>Cyprus</li><li>Greece</li><li>Belgium</li><li>Netherlands</li><li>Singapore</li><li>Australia</li></ul>",
+    "ctaHtml": "<p>Esthetica is looking for new Distributors worldwide, get in touch with us if you are interested to work with us!</p>",
+    "socialTitle": "Follow Us"
+  }
+}
