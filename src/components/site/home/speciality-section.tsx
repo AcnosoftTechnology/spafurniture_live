@@ -23,9 +23,13 @@ export function SpecialitySection({ data }: { data: HomepageContent["speciality"
           <p>{data.description}</p>
         </ScrollReveal>
       </EsthContainer>
+
       <ScrollRevealStagger className="esth-speciality-bottom-row">
-        {data.cards.map((card) => (
-          <ScrollRevealItem key={card.title} className="esth-speciality-box">
+        {data.cards.map((card, index) => (
+          <ScrollRevealItem
+            key={`${card.title || "card"}-${index}`}
+            className="esth-speciality-box"
+          >
             <Image
               src={mediaUrl(card.imagePath)}
               alt={card.title}

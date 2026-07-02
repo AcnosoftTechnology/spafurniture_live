@@ -7317,6 +7317,9 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
    margin-top: -20%;
  }
  
+ .esth-events-banner-media{
+  height:550px;
+ }
  
  }
 
@@ -7621,6 +7624,9 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
   color:#5d4426;
   text-decoration:underline;
   text-underline-offset:3px;
+}
+.esth-event-readmore-modal{
+  z-index: 999;
 }
 
 @media (max-width: 900px){

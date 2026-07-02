@@ -71,7 +71,17 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      {
+     {
+      source: "/manicure-pedicure-chairs/",
+      destination: "/pedicure-manicure/",
+      permanent: true,
+     },
+     {
+      source: "/massage-tables",
+      destination: "/massage-beds/",
+      permanent: true,
+     },
+     {
         source: "/product/:slug",
         destination: "/products/:slug/",
         permanent: true,
