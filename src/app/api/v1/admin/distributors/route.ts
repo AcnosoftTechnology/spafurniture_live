@@ -8,8 +8,8 @@ import {
 import {
   getAdminDistributorsEditorData,
   saveDistributorsContent,
-  type DistributorsPageContent,
 } from "@/features/distributors/get-distributors-data";
+import type { DistributorsPageContent } from "@/features/distributors/schemas/distributors-content.schema";
 
 export async function GET() {
   try {
