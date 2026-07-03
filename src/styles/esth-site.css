@@ -3538,7 +3538,7 @@ body:has(.esth-youtube-modal[data-state="open"]) .esth-floating-contact{
   }
 
   .detailSlideFrame{
-    min-height:250px;
+    min-height:300px;
     padding:0 18px 30px;
   }
 
