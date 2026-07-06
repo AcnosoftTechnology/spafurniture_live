@@ -16,6 +16,7 @@
     "db:migrate:status": "prisma migrate status",
     "db:fix:blog-comments": "prisma migrate deploy && prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "admin:reset-password": "tsx scripts/reset-admin-password.ts",
     "import:spadata": "tsx scripts/import-spadata.ts",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"

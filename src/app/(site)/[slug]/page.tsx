@@ -21,7 +21,11 @@ import {
   PRODUCTS_PAGE_SIZE,
 } from "@/components/site/products-infinite-grid";
 import { CategoryCopySection } from "@/components/site/category-copy-section";
+import { RegionalLandingView } from "@/components/site/regional/regional-landing-view";
 import { EsthPageShell } from "@/components/site/layout/esth-page-shell";
+import { buildRegionalPageMetadata } from "@/features/regional-pages/build-regional-metadata";
+import { getRegionalPageData } from "@/features/regional-pages/get-regional-page-data";
+import { isRegionalPageSlug } from "@/features/regional-pages/regional-page.service";
 import { getCategoryCopyHtml } from "@/lib/category-page-copy";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { buildCategoryPageSchemas } from "@/lib/seo/build-schemas";
@@ -87,6 +91,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const postMeta = await buildBlogPostMetadata(normalizeBlogPostSlug(slug));
   if (Object.keys(postMeta).length > 0) return postMeta;
   if (await isAboutPageSlug(slug)) return buildAboutPageMetadata();
+  if (await isRegionalPageSlug(slug)) return buildRegionalPageMetadata(slug);
   const category = await getCategoryBySlug(slug).catch(() => null);
   if (!category) return {};
   return buildPageMetadata(
@@ -120,6 +125,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   if (await isAboutPageSlug(slug)) {
     const { content } = await getAboutPageData();
     return <AboutPageView content={content} />;
+  }
+
+  if (await isRegionalPageSlug(slug)) {
+    const data = await getRegionalPageData(slug);
+    if (!data) notFound();
+    return <RegionalLandingView slug={slug} {...data} />;
   }
 
   const [category, allCategories] = await Promise.all([

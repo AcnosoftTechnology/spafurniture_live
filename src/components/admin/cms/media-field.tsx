@@ -43,7 +43,9 @@ export function MediaField({ label, value, onChange, previewClassName = "h-32 w-
         <div className="flex flex-wrap items-start gap-3">
           <div className={`relative overflow-hidden rounded-lg border bg-stone-50 ${previewClassName}`}>
             <Image
-              src={mediaUrl(value.webpPath ?? value.path)}
+              src={mediaUrl(
+                value.path.toLowerCase().endsWith(".gif") ? value.path : (value.webpPath ?? value.path),
+              )}
               alt={value.alt ?? value.filename ?? ""}
               fill
               className="object-contain p-2"

@@ -110,6 +110,26 @@ async function processImage(
     return { width, height, webpPath: previewCreated ? path.basename(webpFilepath) : null };
   }
 
+  // Sharp flattens animated GIFs to a single frame — keep original bytes for animation.
+  if (mime === "image/gif") {
+    await fs.writeFile(filepath, buffer);
+    let width: number | null = null;
+    let height: number | null = null;
+    try {
+      const meta = await sharp(buffer).metadata();
+      width = meta.width ?? null;
+      height = meta.height ?? null;
+    } catch {
+      /* optional metadata */
+    }
+    const previewCreated = await tryGenerateWebpPreview(buffer, mime, webpFilepath);
+    return {
+      width,
+      height,
+      webpPath: previewCreated ? path.basename(webpFilepath) : null,
+    };
+  }
+
   const image = sharpInput(buffer, mime);
 
   try {

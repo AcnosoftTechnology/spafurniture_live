@@ -25,6 +25,7 @@ import {
   CalendarDays,
   CalendarRange,
   Globe,
+  MapPin,
   Database,
 } from "lucide-react";
 import { cn, mediaUrl } from "@/lib/utils";
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/admin/about/", label: "About Us", icon: Info },
   { href: "/admin/clients/", label: "Clients", icon: UsersRound },
   { href: "/admin/distributors/", label: "Distributors", icon: Globe },
+  { href: "/admin/regional-pages/", label: "Regional Pages", icon: MapPin },
   { href: "/admin/testimonials/", label: "Testimonials", icon: MessageCircle },
   { href: "/admin/brochure/", label: "Brochure", icon: BookOpen },
   { href: "/admin/shows-exhibitions/", label: "Shows & Exhibitions", icon: CalendarDays },

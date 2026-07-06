@@ -51,6 +51,28 @@ export function sanitizeRichHtml(html: string): string {
   return sanitizeHtml(html, defaultOptions);
 }
 
+const regionalIntroOptions: sanitizeHtml.IOptions = {
+  ...defaultOptions,
+  allowedAttributes: {
+    ...defaultOptions.allowedAttributes,
+    div: ["class", "style"],
+    h2: ["class"],
+    h3: ["class"],
+    h4: ["class"],
+    p: ["class"],
+    strong: [],
+    em: [],
+    ul: ["class"],
+    ol: ["class"],
+    li: ["class"],
+  },
+};
+
+/** Regional intro copy — allows grid shortcode output (div class/style). */
+export function sanitizeRegionalIntroHtml(html: string): string {
+  return sanitizeHtml(html, regionalIntroOptions);
+}
+
 /** Issuu / brochure iframe embed code from admin (iframe + optional wrapper div only). */
 export function sanitizeBrochureEmbed(html: string): string {
   return sanitizeHtml(html.trim(), brochureEmbedOptions);

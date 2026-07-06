@@ -1,5 +1,5 @@
-import { BlogPostDetailSkeleton } from "@/components/site/blog/blog-post-detail-skeleton";
+import { SlugPageLoading } from "@/components/site/slug-page-loading";
 
-export default function SlugPageLoading() {
-  return <BlogPostDetailSkeleton />;
+export default function SlugPageLoadingRoute() {
+  return <SlugPageLoading />;
 }
