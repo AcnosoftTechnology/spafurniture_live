@@ -876,8 +876,8 @@ img{
 
 .esth-premium-banner--regional .esth-premium-image img{
   width:auto;
-  max-width:min(58vw, 700px);
-  max-height:min(62vh, 520px);
+  /* max-width:min(58vw, 700px);
+  max-height:min(62vh, 520px); */
   height:auto;
   object-fit:contain;
   margin:0 auto;
@@ -1232,8 +1232,8 @@ img{
   }
   .esth-premium-banner--regional .esth-premium-image img{
     width:auto !important;
-    max-width:94% !important;
-    max-height:min(52vh, 400px) !important;
+    /* max-width:94% !important;
+    max-height:min(52vh, 400px) !important; */
   }
   .esth-premium-banner--regional .esth-premium-caption{
     right:clamp(16px, 4vw, 48px);
@@ -7913,8 +7913,8 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 
 .esth-premium-banner--regional .esth-premium-image img{
   width:auto !important;
-  max-width:min(58vw, 700px) !important;
-  max-height:min(62vh, 520px) !important;
+  /* max-width:min(58vw, 700px) !important;
+  max-height:min(62vh, 520px) !important; */
   height:auto !important;
   object-fit:contain;
   margin:0 auto !important;
@@ -7941,8 +7941,8 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
     transform:none !important;
   }
   .esth-premium-banner--regional .esth-premium-image img{
-    max-width:94% !important;
-    max-height:min(52vh, 400px) !important;
+    /* max-width:94% !important;
+    max-height:min(52vh, 400px) !important; */
   }
 }
 
