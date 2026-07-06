@@ -3,7 +3,6 @@ import { HeroBanner } from "@/components/site/home/hero-banner";
 import { ProductsIntro } from "@/components/site/home/products-intro";
 import { ProductFeatureSection } from "@/components/site/home/product-feature-section";
 import { RegionalIntroSection } from "@/components/site/regional/regional-intro-section";
-import { HomepageClientFix } from "@/components/site/home/homepage-client-fix";
 import { ShimmerSkeleton } from "@/components/ui/skeleton";
 import type { RegionalPageData } from "@/features/regional-pages/get-regional-page-data";
 
@@ -39,7 +38,6 @@ export function RegionalLandingView({
       ))}
 
       <ClientsSlider data={clients} />
-      <HomepageClientFix />
     </>
   );
 }

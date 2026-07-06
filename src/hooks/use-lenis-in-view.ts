@@ -1,78 +1,22 @@
 "use client";
 
 import { useInView } from "framer-motion";
-import { useEffect, useState, type RefObject } from "react";
-import { useLenis } from "@/components/site/smooth-scroll-provider";
+import type { RefObject } from "react";
 
 type LenisInViewOptions = {
   once?: boolean;
-
   amount?: number;
   margin?: string;
 };
 
-function isElementInView(element: HTMLElement, amount: number): boolean {
-  const rect = element.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-
-  if (rect.bottom <= 0 || rect.top >= viewportHeight) return false;
-
-  const visibleHeight = Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0);
-  const required = Math.max(rect.height * amount, 1);
-
-  return visibleHeight >= required || rect.top < viewportHeight * 0.9;
-}
-
-/**
- * Framer useInView + Lenis scroll/resize checks so reveals still fire when
- * smooth-scroll layout settles after streaming or image loads.
- */
+/** Scroll reveal visibility — Framer useInView only (native document scroll). */
 export function useLenisInView(
   ref: RefObject<HTMLElement | null>,
   { once = true, amount = 0.12, margin }: LenisInViewOptions = {},
 ) {
-  const lenis = useLenis();
-const framerInView = useInView(ref, {
-  once,
-  amount,
-  ...(margin ? { margin: margin as any } : {}),
-});
-  const [lenisInView, setLenisInView] = useState(false);
-  const isInView = framerInView || lenisInView;
-
-  useEffect(() => {
-    if (!framerInView) return;
-    setLenisInView(true);
-  }, [framerInView]);
-
-  useEffect(() => {
-    if (once && lenisInView) return;
-
-    const element = ref.current;
-    if (!element) return;
-
-    const check = () => {
-      if (once && lenisInView) return;
-      if (isElementInView(element, amount)) {
-        setLenisInView(true);
-      }
-    };
-
-    check();
-
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check, { passive: true });
-    lenis?.on("scroll", check);
-
-    const timers = [80, 250, 600, 1500, 3000].map((ms) => window.setTimeout(check, ms));
-
-    return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-      lenis?.off("scroll", check);
-      timers.forEach((timer) => window.clearTimeout(timer));
-    };
-  }, [lenis, once, lenisInView, amount, ref]);
-
-  return isInView;
+  return useInView(ref, {
+    once,
+    amount,
+    ...(margin ? { margin: margin as `${number}px ${number}px ${number}px ${number}px` } : {}),
+  });
 }

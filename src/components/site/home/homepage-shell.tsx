@@ -7,7 +7,6 @@ import { ProductsIntro } from "@/components/site/home/products-intro";
 import { ProductFeatureSection } from "@/components/site/home/product-feature-section";
 import { SpecialitySection } from "@/components/site/home/speciality-section";
 import { FaqSection } from "@/components/site/home/faq-section";
-import { HomepageClientFix } from "@/components/site/home/homepage-client-fix";
 import { ShimmerSkeleton } from "@/components/ui/skeleton";
 import { getHomepageData } from "@/features/homepage/get-homepage-data";
 import { getTestimonialsSectionData } from "@/features/testimonials/get-testimonials-data";
@@ -63,7 +62,6 @@ export async function HomepageContent() {
         carousel={testimonials.content.carousel}
       />
       <FaqSection items={faqs} />
-      <HomepageClientFix />
     </>
   );
 }

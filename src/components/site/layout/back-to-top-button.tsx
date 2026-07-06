@@ -8,11 +8,7 @@ export function BackToTopButton() {
 
   return (
     <div className="wolfe-totop">
-      <button
-        type="button"
-        aria-label="Back to top"
-        onClick={() => scrollToTop(lenis)}
-      >
+      <button type="button" aria-label="Back to top" onClick={() => scrollToTop(lenis)}>
         <ChevronsUp className="esth-back-to-top-icon" strokeWidth={2.5} aria-hidden />
       </button>
     </div>

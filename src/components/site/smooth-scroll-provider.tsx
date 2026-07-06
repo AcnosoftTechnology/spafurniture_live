@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type Lenis from "lenis";
+import "lenis/dist/lenis.css";
 
 const LenisContext = createContext<Lenis | null>(null);
 
@@ -23,7 +24,6 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
     let instance: Lenis | null = null;
     let cancelled = false;
-    let resizeTimers: number[] = [];
 
     const init = async () => {
       const { default: LenisCtor } = await import("lenis");
@@ -31,9 +31,9 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
       instance = new LenisCtor({
         smoothWheel: true,
-        lerp: 0.09,
-        wheelMultiplier: 1.65,
-        touchMultiplier: 1.35,
+        lerp: 0.1,
+        wheelMultiplier: 1,
+        touchMultiplier: 1,
         syncTouch: false,
         autoRaf: true,
         anchors: {
@@ -43,11 +43,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
         stopInertiaOnNavigate: true,
       });
 
-      const resize = () => instance?.resize();
-      resize();
-      requestAnimationFrame(resize);
-      resizeTimers = [120, 450, 1200].map((ms) => window.setTimeout(resize, ms));
-
+      instance.resize();
       setLenis(instance);
     };
 
@@ -65,7 +61,6 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       cancelled = true;
       if (idleCallbackId !== undefined) window.cancelIdleCallback(idleCallbackId);
       if (timeoutId !== undefined) clearTimeout(timeoutId);
-      resizeTimers.forEach((timer) => window.clearTimeout(timer));
       instance?.destroy();
       setLenis(null);
     };
@@ -74,7 +69,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   return <LenisContext.Provider value={lenis}>{children}</LenisContext.Provider>;
 }
 
-export function scrollToTop(lenis: Lenis | null) {
+export function scrollToTop(lenis?: Lenis | null) {
   if (lenis) {
     lenis.scrollTo(0, {
       duration: 1.2,
