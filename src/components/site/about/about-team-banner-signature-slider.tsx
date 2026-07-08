@@ -24,7 +24,6 @@ function SignatureSlideLayer({
     <>
       <div className="esth-about-team-media">
         <AboutBannerImage src={mediaUrl(slide.imagePath)} alt={slide.alt || "About banner"} />
-        <div className="esth-about-team-overlay" aria-hidden />
       </div>
       {slide.overlayText?.trim() ? (
         <p className={`esth-about-team-text${textClassName ? ` ${textClassName}` : ""}`}>{slide.overlayText}</p>

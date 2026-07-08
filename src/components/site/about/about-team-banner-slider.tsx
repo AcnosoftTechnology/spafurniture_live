@@ -123,7 +123,6 @@ export function AboutTeamBannerSlider({ banner }: AboutTeamBannerSliderProps) {
                   alt={slide.alt || `About banner ${index + 1}`}
                   priority={index === 0}
                 />
-                <div className="esth-about-team-overlay" aria-hidden />
               </div>
               {slide.overlayText?.trim() ? (
                 <p className="esth-about-team-text">{slide.overlayText}</p>

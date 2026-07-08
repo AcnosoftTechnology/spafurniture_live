@@ -7210,13 +7210,6 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
   transform-origin:center center;
 }
 
-.esth-about-team-overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(0, 0, 0, 0.38);
-  z-index:1;
-}
-
 .esth-about-team-text{
   position:absolute;
   left:50%;
