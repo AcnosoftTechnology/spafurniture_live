@@ -7174,26 +7174,27 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 
 .esth-about-team-swiper{
   width:100%;
-  min-height:clamp(320px, 42vw, 520px);
 }
 
 .esth-about-team-slide{
   position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:clamp(320px, 42vw, 520px);
+  display:block;
   overflow:hidden;
 }
 
 .esth-about-team-media{
-  position:absolute;
-  inset:0;
+  position:relative;
   z-index:0;
+  width:100%;
+  line-height:0;
 }
 
 .esth-about-team-image{
-  object-fit:cover;
+  width:100%;
+  height:auto;
+  max-width:100%;
+  display:block;
+  object-fit:contain;
   object-position:center;
 }
 
@@ -7217,12 +7218,14 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 }
 
 .esth-about-team-text{
-  position:relative;
+  position:absolute;
+  left:50%;
+  top:50%;
   z-index:2;
   width:min(1170px, calc(100% - 48px));
   max-width:1170px;
-  margin:0 auto;
-  transform:none;
+  margin:0;
+  transform:translate(-50%, -50%);
   padding:clamp(80px, 12vw, 160px) 5%;
   text-align:center;
   font-family:var(--font-josefin), "Josefin Sans", sans-serif;
@@ -7231,6 +7234,7 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
   color:#fff;
   line-height:1.5;
   letter-spacing:0.01em;
+  box-sizing:border-box;
 }
 
 .esth-about-team .swiper-pagination{
@@ -7355,7 +7359,6 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 .esth-about-team--signature .esth-about-team-slide,
 .esth-signature-stage{
   width:100%;
-  min-height:clamp(320px, 42vw, 520px);
 }
 
 .esth-signature-stage{
@@ -7364,19 +7367,23 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 }
 
 .esth-signature-layer{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  position:relative;
+  display:block;
+  width:100%;
 }
 
 .esth-signature-layer--idle{
-  position:absolute;
-  inset:0;
+  position:relative;
+  width:100%;
+}
+
+.esth-signature-layer--idle.is-hidden{
+  visibility:hidden;
 }
 
 .esth-signature-layer--in{
+  position:absolute;
+  inset:0;
   z-index:1;
   animation:esth-signature-reveal-in var(--esth-signature-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -7400,7 +7407,7 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
   top:0;
   bottom:0;
   background-repeat:no-repeat;
-  background-size:cover;
+  background-size:auto 100%;
   transform-origin:center center;
   box-shadow:inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   will-change:transform, opacity, filter;

@@ -106,6 +106,7 @@ export function AboutTeamBannerSlider({ banner }: AboutTeamBannerSliderProps) {
         loop={hasMany}
         speed={transitionMs}
         slidesPerView={1}
+        autoHeight
         autoplay={
           hasMany
             ? { delay: delayMs, disableOnInteraction: false, pauseOnMouseEnter: true }

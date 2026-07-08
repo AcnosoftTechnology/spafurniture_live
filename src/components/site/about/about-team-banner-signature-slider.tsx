@@ -106,11 +106,14 @@ export function AboutTeamBannerSignatureSlider({
       onMouseLeave={() => setPaused(false)}
     >
       <div className="esth-about-team-slide esth-signature-stage">
-        {!transitioning ? (
-          <div className="esth-signature-layer esth-signature-layer--idle">
-            <SignatureSlideLayer slide={activeSlide} />
-          </div>
-        ) : (
+        <div
+          className={`esth-signature-layer esth-signature-layer--idle${transitioning ? " is-hidden" : ""}`}
+          aria-hidden={transitioning}
+        >
+          <SignatureSlideLayer slide={transitioning ? fromSlide : activeSlide} />
+        </div>
+
+        {transitioning ? (
           <>
             <div className="esth-signature-layer esth-signature-layer--in" aria-hidden={false}>
               <SignatureSlideLayer slide={toSlide} textClassName="esth-signature-text--in" />
@@ -138,7 +141,7 @@ export function AboutTeamBannerSignatureSlider({
             <div className="esth-signature-sheen" aria-hidden />
             <div className="esth-signature-grain" aria-hidden />
           </>
-        )}
+        ) : null}
       </div>
 
       {hasMany ? (
