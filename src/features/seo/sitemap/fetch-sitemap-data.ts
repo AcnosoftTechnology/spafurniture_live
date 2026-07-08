@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { getBaseUrl } from "@/lib/utils";
 import { productPath, categoryPath, pagePath } from "@/lib/paths";
 import { blogPostPath, blogIndexPath } from "@/lib/blog-paths";
 import { getAboutPublicSlug } from "@/features/about/get-about-data";
+import { getSitemapBaseUrl } from "./sitemap-base-url";
 import type { SitemapData, SitemapUrlEntry } from "./types";
 import { mediaAbsoluteUrl, uniqueUrls, type MediaRef } from "./media-url";
 
@@ -33,7 +33,7 @@ function categoryImages(
 }
 
 export async function fetchSitemapData(): Promise<SitemapData> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getSitemapBaseUrl();
   const aboutSlug = await getAboutPublicSlug().catch(() => "about");
 
   const [posts, products, categories, pages] = await Promise.all([

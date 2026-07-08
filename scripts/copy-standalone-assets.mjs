@@ -14,17 +14,31 @@ const standalonePublic = join(standaloneDir, "public");
 const uploadsDir = join(publicDir, "uploads");
 const standaloneUploads = join(standalonePublic, "uploads");
 
+const GENERATED_SITEMAP_FILES = new Set([
+  "sitemap.xml",
+  "sitemap_index.xml",
+  "post-sitemap.xml",
+  "page-sitemap.xml",
+  "products-sitemap.xml",
+]);
+
 function isUploadsPath(absolutePath) {
   const normalized = absolutePath.split(sep).join(sep);
   const uploadsRoot = uploadsDir.split(sep).join(sep);
   return normalized === uploadsRoot || normalized.startsWith(`${uploadsRoot}${sep}`);
 }
 
+function isGeneratedSitemapPath(absolutePath) {
+  const relative = absolutePath.slice(publicDir.length).replace(/^[/\\]+/, "");
+  const parts = relative.split(/[/\\]/).filter(Boolean);
+  return parts.length === 1 && GENERATED_SITEMAP_FILES.has(parts[0]);
+}
+
 cpSync(join(root, ".next", "static"), join(standaloneDir, ".next", "static"), { recursive: true });
 
 cpSync(publicDir, standalonePublic, {
   recursive: true,
-  filter: (src) => !isUploadsPath(src),
+  filter: (src) => !isUploadsPath(src) && !isGeneratedSitemapPath(src),
 });
 
 mkdirSync(uploadsDir, { recursive: true });

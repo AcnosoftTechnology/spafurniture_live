@@ -17,6 +17,14 @@
 /.next/
 /out/
 
+# Generated sitemap XML (built at runtime / Admin → Settings → Sitemap).
+# Do not commit stale hostnames (e.g. spa.acnosoft.com).
+/public/sitemap.xml
+/public/sitemap_index.xml
+/public/post-sitemap.xml
+/public/page-sitemap.xml
+/public/products-sitemap.xml
+
 # production
 /build
 
