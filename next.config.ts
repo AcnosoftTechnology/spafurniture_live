@@ -16,17 +16,65 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // {
+  //   key: "Content-Security-Policy",
+  //   value: `
+  //     default-src 'self';
+  //     script-src 'self' 'unsafe-inline' 'unsafe-eval';
+  //     style-src 'self' 'unsafe-inline';
+  //     img-src 'self' data: blob: https:;
+  //     font-src 'self' data:;
+  //     frame-src 'self' https://www.google.com https://maps.google.com https://e.issuu.com https://issuu.com https://*.issuu.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com;
+  //   `.replace(/\n/g, " "),
+  // },
+
   {
-    key: "Content-Security-Policy",
-    value: `
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval';
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data: blob: https:;
-      font-src 'self' data:;
-      frame-src 'self' https://www.google.com https://maps.google.com https://e.issuu.com https://issuu.com https://*.issuu.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com;
-    `.replace(/\n/g, " "),
-  },
+  key: "Content-Security-Policy",
+  value: `
+    default-src 'self';
+
+    script-src
+      'self'
+      'unsafe-inline'
+      'unsafe-eval'
+      https://www.google.com
+      https://www.gstatic.com
+      https://www.recaptcha.net;
+
+    style-src
+      'self'
+      'unsafe-inline';
+
+    img-src
+      'self'
+      data:
+      blob:
+      https:;
+
+    font-src
+      'self'
+      data:;
+
+    connect-src
+      'self'
+      https://www.google.com
+      https://www.gstatic.com
+      https://www.recaptcha.net;
+
+    frame-src
+      'self'
+      https://www.google.com
+      https://www.recaptcha.net
+      https://maps.google.com
+      https://e.issuu.com
+      https://issuu.com
+      https://*.issuu.com
+      https://www.youtube.com
+      https://youtube.com
+      https://www.youtube-nocookie.com
+      https://youtube-nocookie.com;
+  `.replace(/\n/g, " "),
+},
 ];
 
 const nextConfig: NextConfig = {

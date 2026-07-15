@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "sonner";
 import {
   contactInquirySchema,
@@ -81,6 +82,9 @@ export function InquiryForm({
 }: InquiryFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+
+const [captchaToken, setCaptchaToken] = useState("");
   const isModal = variant === "modal";
   const isContactPage = variant === "contact-page";
   const isDistributorsPage = variant === "distributors-page";
@@ -117,6 +121,12 @@ export function InquiryForm({
   }, [form]);
 
   async function onSubmit(data: InquiryInput) {
+
+
+      if (!captchaToken) {
+  toast.error("Please verify that you are not a robot.");
+  return;
+}
     setLoading(true);
     form.clearErrors("root");
 
@@ -124,11 +134,16 @@ export function InquiryForm({
       const res = await fetch("/api/v1/inquiries/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          productId: data.productId?.trim() || undefined,
-          pageUrl: pageUrl ?? (typeof window !== "undefined" ? window.location.href : undefined),
-        }),
+       body: JSON.stringify({
+    ...data,
+    recaptchaToken: captchaToken,
+    productId: data.productId?.trim() || undefined,
+    pageUrl:
+      pageUrl ??
+      (typeof window !== "undefined"
+        ? window.location.href
+        : undefined),
+}),
       });
 
       const json = (await res.json().catch(() => null)) as {
@@ -137,6 +152,9 @@ export function InquiryForm({
       } | null;
 
       if (res.ok) {
+        recaptchaRef.current?.reset();
+
+setCaptchaToken("");
         toast.success(json?.meta?.message ?? "Thank you! Your enquiry has been submitted.");
         onSuccess?.();
         router.push("/thank-you/");
@@ -158,8 +176,10 @@ export function InquiryForm({
       form.setError("root", { message });
       toast.error(message);
     } finally {
-      setLoading(false);
-    }
+    recaptchaRef.current?.reset();
+    setCaptchaToken("");
+    setLoading(false);
+}
   }
 
   const submitHandler = form.handleSubmit(onSubmit, onInvalid);
@@ -247,7 +267,13 @@ export function InquiryForm({
 
         <FieldError message={form.formState.errors.root?.message} />
         </div>
-
+<ReCAPTCHA
+    ref={recaptchaRef}
+    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+    onChange={(token: string | null) => {
+  setCaptchaToken(token ?? "");
+}}
+/>
         <div className="esth-enquiry-modal-footer">
           <Button type="submit" disabled={loading} className="esth-enquiry-submit" size="lg">
             {loading ? "Sending..." : "Send enquiry"}
@@ -328,7 +354,13 @@ export function InquiryForm({
         </div>
 
         <FieldError message={form.formState.errors.root?.message} />
-
+<ReCAPTCHA
+    ref={recaptchaRef}
+    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+    onChange={(token: string | null) => {
+  setCaptchaToken(token ?? "");
+}}
+/>
         <Button type="submit" disabled={loading} className="esth-contact-submit" size="lg">
           {loading ? "Sending..." : "Send"}
         </Button>
@@ -404,7 +436,13 @@ export function InquiryForm({
         </div>
 
         <FieldError message={form.formState.errors.root?.message} />
-
+<ReCAPTCHA
+    ref={recaptchaRef}
+    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+    onChange={(token: string | null) => {
+  setCaptchaToken(token ?? "");
+}}
+/>
         <Button type="submit" disabled={loading} className="esth-contact-submit" size="lg">
           {loading ? "Sending..." : "Send"}
         </Button>
