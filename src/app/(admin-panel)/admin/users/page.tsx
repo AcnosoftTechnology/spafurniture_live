@@ -1,11 +1,14 @@
 import { AdminHeader } from "@/components/admin/admin-header";
+import { AdminUsersTable } from "@/components/admin/users/admin-users-table";
 import { prisma } from "@/lib/prisma";
-import { DataTable, DataTableHeader, DataTableBody, DataTableRow, DataTableCell } from "@/components/admin/data-table";
-import { Badge } from "@/components/ui/badge";
+import { auth } from "@/lib/auth/config";
+import { canManageUsers } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const session = await auth();
+  const canEditUsers = session?.user?.role ? canManageUsers(session.user.role) : false;
   let users: Array<{ id: string; name: string; email: string; role: string; status: string }> = [];
   try {
     users = await prisma.user.findMany({
@@ -20,26 +23,7 @@ export default async function AdminUsersPage() {
     <>
       <AdminHeader title="Users" />
       <main className="flex-1 overflow-y-auto p-6">
-        <DataTable>
-          <table className="w-full">
-            <DataTableHeader>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Role</th>
-              <th className="px-4 py-3">Status</th>
-            </DataTableHeader>
-            <DataTableBody>
-              {users.map((u) => (
-                <DataTableRow key={u.id}>
-                  <DataTableCell>{u.name}</DataTableCell>
-                  <DataTableCell>{u.email}</DataTableCell>
-                  <DataTableCell><Badge variant="secondary">{u.role}</Badge></DataTableCell>
-                  <DataTableCell>{u.status}</DataTableCell>
-                </DataTableRow>
-              ))}
-            </DataTableBody>
-          </table>
-        </DataTable>
+        <AdminUsersTable users={users} canEditUsers={canEditUsers} />
       </main>
     </>
   );
