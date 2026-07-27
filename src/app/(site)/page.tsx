@@ -25,5 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function HomePage() {
+  // git-pull-check: 2026-07-27
   return <HomepageShell />;
 }
