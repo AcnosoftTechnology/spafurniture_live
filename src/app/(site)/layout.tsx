@@ -8,10 +8,12 @@ import { JsonLdGroup } from "@/components/site/seo/json-ld";
 import { getHomepageFaqs, getHomepageContent } from "@/features/homepage/get-homepage-data";
 import { getSiteSchemaSettings } from "@/features/settings/get-site-schema";
 import { buildSiteLayoutSchemas } from "@/lib/seo/build-schemas";
+import { auth } from "@/lib/auth/config";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
 import { getMainMenu } from "@/lib/menu";
 import { getSiteConfig } from "@/lib/site-settings";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import "@/styles/esth-site.css";
 
 function isHomePath(pathname: string) {
@@ -24,14 +26,19 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const pathname = requestHeaders.get("x-pathname") ?? "/";
   const onHomepage = isHomePath(pathname);
 
-  const [navItems, site, homepage, baseUrl, siteSchema, homepageFaqs] = await Promise.all([
+  const [navItems, site, homepage, baseUrl, siteSchema, homepageFaqs, session] = await Promise.all([
     getMainMenu(),
     getSiteConfig(),
     getHomepageContent(),
     getSiteBaseUrl(),
     getSiteSchemaSettings(),
     onHomepage ? getHomepageFaqs() : Promise.resolve([]),
+    auth(),
   ]);
+
+  if (site.features.maintenanceMode && !session?.user?.id) {
+    notFound();
+  }
 
   const layoutSchemaScripts = await buildSiteLayoutSchemas(
     site,
@@ -47,6 +54,11 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <SiteProviders>
           <SmoothScrollProvider>
             <div className="esth-site">
+              {site.features.maintenanceMode ? (
+                <div className="bg-amber-500 px-4 py-2 text-center text-xs font-medium text-stone-950">
+                  Maintenance mode is ON — visitors see a 404. You can view the site because you are logged in as admin.
+                </div>
+              ) : null}
               <EsthHeader menuLinks={navItems} site={site} homepageHeader={homepage.header} />
               <main>{children}</main>
               <EsthFooter site={site} footer={homepage.footer} />

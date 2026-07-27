@@ -75,8 +75,10 @@ export const siteConfigSchema = z.object({
     .object({
       blogComments: z.boolean().default(true),
       productReviews: z.boolean().default(true),
+      /** When true, public site returns 404 unless an admin session exists */
+      maintenanceMode: z.boolean().default(false),
     })
-    .default({ blogComments: true, productReviews: true }),
+    .default({ blogComments: true, productReviews: true, maintenanceMode: false }),
 });
 
 export type SiteConfig = z.infer<typeof siteConfigSchema>;
@@ -104,7 +106,7 @@ export const defaultSiteConfig: SiteConfig = {
     address: "",
   },
   social: [],
-  features: { blogComments: true, productReviews: true },
+  features: { blogComments: true, productReviews: true, maintenanceMode: false },
   email: defaultSiteEmailSettings,
 };
 

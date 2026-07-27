@@ -647,6 +647,23 @@ export function SettingsEditor({ initialData }: { initialData: AdminSettingsEdit
         </TabsContent>
 
         <TabsContent value="features" className="mt-4 space-y-3">
+          <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+            <div>
+              <p className="text-sm font-medium text-stone-900">Maintenance mode</p>
+              <p className="text-xs text-stone-500">
+                Public visitors see a 404. Logged-in admins can still view the site.
+              </p>
+            </div>
+            <Switch
+              checked={site.features.maintenanceMode}
+              onCheckedChange={(checked) =>
+                setPayload({
+                  ...payload,
+                  site: { ...site, features: { ...site.features, maintenanceMode: checked } },
+                })
+              }
+            />
+          </div>
           <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
             <div>
               <p className="text-sm font-medium text-stone-900">Product reviews</p>
