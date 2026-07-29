@@ -13,7 +13,7 @@ import {
   type SchemaNode,
 } from "@/lib/seo/schema";
 import { resolveCategoryFaqsForSchema, resolveProductFaqsForSchema } from "@/lib/seo/resolve-faqs";
-import { manualSchemaScript } from "@/lib/seo/manual-schema";
+import { manualSchemaScript, normalizeManualSchema } from "@/lib/seo/manual-schema";
 import { isGlobalManualSchemaActive } from "@/features/settings/get-site-schema";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
 import { mediaUrl } from "@/lib/utils";
@@ -85,6 +85,46 @@ export async function buildHomepageSchemas(
   return jsonLdDocument(faqSchema(schemaFaqs));
 }
 
+function isProductType(type: unknown): boolean {
+  if (type === "Product") return true;
+  return Array.isArray(type) && type.includes("Product");
+}
+
+/** Google Product snippets need offers, review, or aggregateRating. */
+function ensureProductSnippetFields(
+  doc: Record<string, unknown>,
+  fallbackProduct: SchemaNode,
+): Record<string, unknown> {
+  const patch = (node: unknown): unknown => {
+    if (!node || typeof node !== "object") return node;
+    if (Array.isArray(node)) return node.map(patch);
+
+    const obj = { ...(node as Record<string, unknown>) };
+    if (Array.isArray(obj["@graph"])) {
+      obj["@graph"] = obj["@graph"].map(patch);
+    }
+
+    if (isProductType(obj["@type"])) {
+      const hasOffers = obj.offers != null;
+      const hasReview = obj.review != null;
+      const hasAggregate = obj.aggregateRating != null;
+      if (!hasOffers && !hasReview && !hasAggregate) {
+        obj.offers = fallbackProduct.offers;
+        if (fallbackProduct.aggregateRating) obj.aggregateRating = fallbackProduct.aggregateRating;
+        if (fallbackProduct.review) obj.review = fallbackProduct.review;
+      } else if (hasOffers && typeof obj.offers === "object" && !Array.isArray(obj.offers)) {
+        const offer = obj.offers as Record<string, unknown>;
+        if (offer.price == null && offer.priceSpecification == null && fallbackProduct.offers) {
+          obj.offers = { ...offer, ...(fallbackProduct.offers as Record<string, unknown>) };
+        }
+      }
+    }
+    return obj;
+  };
+
+  return patch(doc) as Record<string, unknown>;
+}
+
 export async function buildProductPageSchemas(product: {
   id: string;
   title: string;
@@ -94,26 +134,39 @@ export async function buildProductPageSchemas(product: {
   priceDisplay?: string | null;
   schemaJson?: unknown;
   gallery: Array<{ media: { path: string } }>;
+  reviews?: Array<{
+    authorName: string;
+    rating: number;
+    title?: string | null;
+    body?: string | null;
+  }>;
 }) {
-  const manual = manualSchemaScript(product.schemaJson);
-  if (manual) return manual;
-
   const baseUrl = await getSiteBaseUrl();
   const images = product.gallery
     .map((g) => `${baseUrl}${mediaUrl(g.media.path)}`)
     .filter(Boolean);
 
+  const productSchemaNode = catalogProductSchema(
+    {
+      title: product.title,
+      slug: product.slug,
+      description: productDescription(product),
+      priceDisplay: product.priceDisplay,
+      images,
+      image: images[0],
+      reviews: product.reviews,
+    },
+    baseUrl,
+  );
+
+  const manual = normalizeManualSchema(product.schemaJson);
+  if (manual) {
+    const patched = ensureProductSnippetFields(manual, productSchemaNode);
+    return { __html: JSON.stringify(patched) };
+  }
+
   const nodes: SchemaNode[] = [
-    catalogProductSchema(
-      {
-        title: product.title,
-        slug: product.slug,
-        description: productDescription(product),
-        images,
-        image: images[0],
-      },
-      baseUrl,
-    ),
+    productSchemaNode,
     breadcrumbSchema([
       { name: "Home", url: `${baseUrl}/` },
       { name: "Products", url: `${baseUrl}/products/` },

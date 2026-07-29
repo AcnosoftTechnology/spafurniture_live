@@ -92,7 +92,7 @@ export function breadcrumbSchema(items: { name: string; url: string }[]) {
   };
 }
 
-/** Catalogue / enquiry product — no fake ecommerce Offer unless a real numeric price exists. */
+/** Catalogue / enquiry product — always emits Offer (and reviews when approved). */
 export function catalogProductSchema(
   product: {
     title: string;
@@ -102,6 +102,12 @@ export function catalogProductSchema(
     image?: string | null;
     images?: string[];
     brand?: string;
+    reviews?: Array<{
+      authorName: string;
+      rating: number;
+      title?: string | null;
+      body?: string | null;
+    }>;
   },
   baseUrl = getBaseUrl(),
 ) {
@@ -113,7 +119,31 @@ export function catalogProductSchema(
       ? [product.image]
       : undefined;
 
-  return {
+  const approvedReviews = (product.reviews ?? []).filter(
+    (review) => Number.isFinite(review.rating) && review.rating >= 1 && review.rating <= 5,
+  );
+
+  // Google Product snippets require offers, review, or aggregateRating.
+  // Offer also requires a numeric price — enquiry catalogue uses 0 (price on request).
+  const offers: SchemaNode = {
+    "@type": "Offer",
+    url,
+    price: String(price ?? 0),
+    priceCurrency: "INR",
+    availability: "https://schema.org/InStock",
+    itemCondition: "https://schema.org/NewCondition",
+    ...(price == null
+      ? {
+          priceSpecification: {
+            "@type": "PriceSpecification",
+            priceCurrency: "INR",
+            description: "Price on request",
+          },
+        }
+      : {}),
+  };
+
+  const schema: SchemaNode = {
     "@type": "Product",
     name: product.title,
     description: product.description ?? undefined,
@@ -123,16 +153,34 @@ export function catalogProductSchema(
       "@type": "Brand",
       name: product.brand ?? "Esthetica Spa Furniture",
     },
-    offers: price
-      ? {
-          "@type": "Offer",
-          price,
-          priceCurrency: "INR",
-          availability: "https://schema.org/InStock",
-          url,
-        }
-      : undefined,
+    offers,
   };
+
+  if (approvedReviews.length) {
+    const ratingSum = approvedReviews.reduce((sum, review) => sum + review.rating, 0);
+    const ratingValue = Math.round((ratingSum / approvedReviews.length) * 10) / 10;
+    schema.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: String(ratingValue),
+      reviewCount: String(approvedReviews.length),
+      bestRating: "5",
+      worstRating: "1",
+    };
+    schema.review = approvedReviews.slice(0, 5).map((review) => ({
+      "@type": "Review",
+      author: { "@type": "Person", name: review.authorName },
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: String(review.rating),
+        bestRating: "5",
+        worstRating: "1",
+      },
+      name: review.title || undefined,
+      reviewBody: review.body || undefined,
+    }));
+  }
+
+  return schema;
 }
 
 /** @deprecated Use catalogProductSchema — kept for backwards compatibility. */
