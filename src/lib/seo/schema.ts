@@ -1,6 +1,7 @@
 import { blogPostPath } from "@/lib/blog-paths";
 import { getBaseUrl, mediaUrl } from "@/lib/utils";
 import { productCanonicalUrl } from "@/lib/paths";
+import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
 import type { SiteConfig } from "@/features/settings/schemas/site-config.schema";
 
 export type SchemaNode = Record<string, unknown>;
@@ -52,7 +53,7 @@ export function websiteSchema(baseUrl = getBaseUrl()) {
   };
 }
 
-export function localBusinessSchema(site: SiteConfig, baseUrl = getBaseUrl()) {
+export function localBusinessSchema(site: PublicSiteConfig | SiteConfig, baseUrl = getBaseUrl()) {
   const logoPath = site.branding?.siteLogoPath;
   return {
     "@type": "LocalBusiness",

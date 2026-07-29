@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminProviders } from "@/components/providers/admin-providers";
 import { getSiteFaviconMetadata } from "@/lib/favicon";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { icons: await getSiteFaviconMetadata() };
 }
 
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
-  const site = await getSiteConfig();
+  const site = await getPublicSiteConfig();
 
   return (
     <AdminProviders>

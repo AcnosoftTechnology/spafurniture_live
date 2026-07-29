@@ -17,6 +17,9 @@ export type NavEditorItem = {
   children: NavEditorItem[];
 };
 
+/** Public pages must never receive SMTP / mailbox credentials. */
+export type PublicSiteConfig = Omit<SiteConfig, "email">;
+
 export type AdminSiteConfig = SiteConfig & {
   email: SiteConfig["email"] & { smtpPassConfigured?: boolean };
 };
@@ -71,7 +74,13 @@ function migrateLegacySiteConfig(raw: Record<string, unknown>): SiteConfig {
   });
 }
 
-/** Strip SMTP password before sending config to the admin UI. */
+/** Remove the entire email block before any client / public RSC payload. */
+export function sanitizeSiteConfigForPublic(site: SiteConfig): PublicSiteConfig {
+  const { email: _email, ...publicSite } = site;
+  return publicSite;
+}
+
+/** Strip SMTP password before sending config to the admin settings UI. */
 export function sanitizeSiteConfigForAdmin(site: SiteConfig): AdminSiteConfig {
   return {
     ...site,
@@ -100,6 +109,11 @@ export async function getSiteConfig(): Promise<SiteConfig> {
   } catch {
     return defaultSiteConfig;
   }
+}
+
+/** Safe for layouts, headers, footers, and any props that may serialize to the browser. */
+export async function getPublicSiteConfig(): Promise<PublicSiteConfig> {
+  return sanitizeSiteConfigForPublic(await getSiteConfig());
 }
 
 export async function saveSiteConfig(config: SiteConfig): Promise<SiteConfig> {

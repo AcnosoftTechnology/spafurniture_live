@@ -1,7 +1,7 @@
 import { InternationalDistributorsView } from "@/components/site/distributors/international-distributors-view";
 import { getDistributorsPageData } from "@/features/distributors/get-distributors-data";
 import { getHomepageContent } from "@/features/homepage/get-homepage-data";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { mediaUrl } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ export async function generateMetadata() {
 export default async function InternationalDistributorsPage() {
   const [{ content }, site, homepage] = await Promise.all([
     getDistributorsPageData(),
-    getSiteConfig(),
+    getPublicSiteConfig(),
     getHomepageContent(),
   ]);
   const socialLinks = site.social.length ? site.social : homepage.footer.social;

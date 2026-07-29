@@ -29,7 +29,7 @@ import {
   Database,
 } from "lucide-react";
 import { cn, mediaUrl } from "@/lib/utils";
-import type { SiteConfig } from "@/features/settings/schemas/site-config.schema";
+import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
 
 const navItems = [
   { href: "/admin/dashboard/", label: "Dashboard", icon: LayoutDashboard },
@@ -61,7 +61,7 @@ function normalizePath(pathname: string) {
   return pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
 }
 
-export function AdminSidebar({ site }: { site: SiteConfig }) {
+export function AdminSidebar({ site }: { site: PublicSiteConfig }) {
   const pathname = usePathname();
   const normalizedPathname = normalizePath(pathname);
   const adminLogo = site.branding.adminLogoPath || site.branding.siteLogoPath;

@@ -3,13 +3,14 @@ import { InquiryForm } from "@/components/site/inquiry-form";
 import { ContactGoogleMap } from "@/components/site/contact/contact-google-map";
 import { ContactSocialLinks } from "@/components/site/contact/contact-social-links";
 import { EsthPageShell } from "@/components/site/layout/esth-page-shell";
-import { defaultSiteConfig, type SiteConfig } from "@/features/settings/schemas/site-config.schema";
+import { defaultSiteConfig } from "@/features/settings/schemas/site-config.schema";
+import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
 
 const DEFAULT_ADDRESS =
   "Plot No. 249, Sector 6, IMT Manesar, Gurgaon-122050, Haryana, India";
 
 type ContactPageViewProps = {
-  site: SiteConfig;
+  site: PublicSiteConfig;
   socialLinks: Array<{ platform: string; href: string }>;
 };
 

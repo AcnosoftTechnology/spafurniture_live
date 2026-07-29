@@ -13,7 +13,7 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 import { blogPostSchema, breadcrumbSchema, jsonLdGraph } from "@/lib/seo/schema";
 import { JsonLd } from "@/components/site/seo/json-ld";
 import { getBaseUrl, mediaUrl } from "@/lib/utils";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 import { blogPostPath, blogIndexPath } from "@/lib/blog-paths";
 
 export function normalizeBlogPostSlug(raw: string) {
@@ -36,7 +36,7 @@ export async function buildBlogPostMetadata(slug: string) {
 
 export async function BlogPostPublicPage({ slug: rawSlug }: { slug: string }) {
   const slug = normalizeBlogPostSlug(rawSlug);
-  const [post, site] = await Promise.all([getPostBySlug(slug), getSiteConfig().catch(() => null)]);
+  const [post, site] = await Promise.all([getPostBySlug(slug), getPublicSiteConfig().catch(() => null)]);
   if (!post) notFound();
 
   const comments = await getApprovedBlogCommentsForPost(post.id).catch(() => []);

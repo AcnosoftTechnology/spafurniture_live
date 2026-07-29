@@ -11,7 +11,7 @@ import { buildSiteLayoutSchemas } from "@/lib/seo/build-schemas";
 import { auth } from "@/lib/auth/config";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
 import { getMainMenu } from "@/lib/menu";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import "@/styles/esth-site.css";
@@ -28,7 +28,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   const [navItems, site, homepage, baseUrl, siteSchema, homepageFaqs, session] = await Promise.all([
     getMainMenu(),
-    getSiteConfig(),
+    getPublicSiteConfig(),
     getHomepageContent(),
     getSiteBaseUrl(),
     getSiteSchemaSettings(),

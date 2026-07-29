@@ -1,9 +1,9 @@
 import { faviconMimeType, faviconPublicHref } from "@/lib/favicon";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 import { getBaseUrl, mediaUrl } from "@/lib/utils";
 
 export async function FaviconHeadLinks() {
-  const site = await getSiteConfig();
+  const site = await getPublicSiteConfig();
   const faviconPath = site.branding.faviconPath?.trim();
   if (!faviconPath) return null;
 

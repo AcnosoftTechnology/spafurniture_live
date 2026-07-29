@@ -165,7 +165,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { mediaUrl } from "@/lib/utils";
 import type { NavItem } from "@/components/site/site-header";
-import type { SiteConfig } from "@/features/settings/schemas/site-config.schema";
+import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
 import type { HomepageContent } from "@/features/homepage/schemas/homepage-content.schema";
 
 function normalizePath(path: string) {
@@ -190,7 +190,7 @@ export function EsthHeader({
   homepageHeader,
 }: {
   menuLinks: NavItem[];
-  site: SiteConfig;
+  site: PublicSiteConfig;
   homepageHeader: HomepageContent["header"];
 }) {
   const pathname = usePathname();

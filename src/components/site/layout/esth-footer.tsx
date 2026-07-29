@@ -3,7 +3,7 @@ import { mediaUrl } from "@/lib/utils";
 import { SocialPlatformIcon } from "@/components/site/social-platform-icon";
 import { EsthPageShell } from "@/components/site/layout/esth-page-shell";
 import { BackToTopButton } from "@/components/site/layout/back-to-top-button";
-import type { SiteConfig } from "@/features/settings/schemas/site-config.schema";
+import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
 import type { HomepageContent } from "@/features/homepage/schemas/homepage-content.schema";
 
 function certificationHasLink(href?: string) {
@@ -11,7 +11,7 @@ function certificationHasLink(href?: string) {
   return Boolean(trimmed && trimmed !== "#");
 }
 
-export function EsthFooter({ site, footer }: { site: SiteConfig; footer: HomepageContent["footer"] }) {
+export function EsthFooter({ site, footer }: { site: PublicSiteConfig; footer: HomepageContent["footer"] }) {
   const footerLogo = site.branding.footerLogoPath || footer.miniLogoPath;
   const socialLinks = site.social.length ? site.social : footer.social;
 

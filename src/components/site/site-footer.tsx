@@ -1,7 +1,7 @@
 import Link from "next/link";
-import type { SiteConfig } from "@/lib/site-settings";
+import type { PublicSiteConfig } from "@/lib/site-settings";
 
-export function SiteFooter({ site }: { site?: SiteConfig }) {
+export function SiteFooter({ site }: { site?: PublicSiteConfig }) {
   const email = site?.contact?.email ?? "info@spafurniture.in";
   const phone = site?.contact?.phone ?? "+919873144051";
 

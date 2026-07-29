@@ -1,4 +1,4 @@
-import type { SiteConfig } from "@/features/settings/schemas/site-config.schema";
+import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
 import {
   breadcrumbSchema,
   catalogProductSchema,
@@ -40,7 +40,7 @@ function appendExtraSchema(nodes: SchemaNode[], extra?: unknown) {
 }
 
 export async function buildSiteLayoutSchemas(
-  site: import("@/features/settings/schemas/site-config.schema").SiteConfig,
+  site: PublicSiteConfig,
   baseUrl: string,
   globalSchemaJson: string,
   homepageFaqs?: Array<{ question: string; answer: string; schemaEnabled?: boolean }>,
@@ -67,7 +67,7 @@ export async function buildSiteLayoutSchemas(
 
 /** @deprecated Use buildSiteLayoutSchemas — returns first script only. */
 export async function buildSiteLayoutSchema(
-  site: import("@/features/settings/schemas/site-config.schema").SiteConfig,
+  site: PublicSiteConfig,
   baseUrl: string,
   globalSchemaJson: string,
   homepageFaqs?: Array<{ question: string; answer: string; schemaEnabled?: boolean }>,
@@ -203,7 +203,7 @@ export async function buildProductsIndexSchemas(
   );
 }
 
-export async function buildContactPageSchemas(site: SiteConfig) {
+export async function buildContactPageSchemas(site: PublicSiteConfig) {
   if (await isGlobalManualSchemaActive()) return null;
 
   const baseUrl = await getSiteBaseUrl();

@@ -1,7 +1,7 @@
 import { ContactPageView } from "@/components/site/contact/contact-page-view";
 import { JsonLd } from "@/components/site/seo/json-ld";
 import { getHomepageContent } from "@/features/homepage/get-homepage-data";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 import { buildContactPageSchemas } from "@/lib/seo/build-schemas";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -13,7 +13,7 @@ export async function generateMetadata() {
 }
 
 export default async function ContactPage() {
-  const [site, homepage] = await Promise.all([getSiteConfig(), getHomepageContent()]);
+  const [site, homepage] = await Promise.all([getPublicSiteConfig(), getHomepageContent()]);
   const socialLinks = site.social.length ? site.social : homepage.footer.social;
   const schemaScript = await buildContactPageSchemas(site);
 

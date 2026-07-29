@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { FaviconHeadLinks } from "@/components/site/favicon-head-links";
 import { getSiteFaviconMetadata } from "@/lib/favicon";
-import { getSiteConfig } from "@/lib/site-settings";
+import { getPublicSiteConfig } from "@/lib/site-settings";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [site, icons, baseUrl] = await Promise.all([getSiteConfig(), getSiteFaviconMetadata(), getSiteBaseUrl()]);
+  const [site, icons, baseUrl] = await Promise.all([getPublicSiteConfig(), getSiteFaviconMetadata(), getSiteBaseUrl()]);
 
   return {
     metadataBase: new URL(baseUrl),
