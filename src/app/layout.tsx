@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { FaviconHeadLinks } from "@/components/site/favicon-head-links";
+import { SiteOgLogoMeta } from "@/components/site/site-og-logo-meta";
 import { getSiteFaviconMetadata } from "@/lib/favicon";
 import { getPublicSiteConfig } from "@/lib/site-settings";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-IN" suppressHydrationWarning>
       <head>
         <FaviconHeadLinks />
+        <SiteOgLogoMeta />
       </head>
       <body className="antialiased">
         {children}

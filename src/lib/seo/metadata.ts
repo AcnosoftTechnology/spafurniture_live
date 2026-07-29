@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteFaviconMetadata } from "@/lib/favicon";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
+import { mediaUrl } from "@/lib/utils";
 
 export type SeoFields = {
   title: string;
@@ -15,11 +16,25 @@ export type SeoFields = {
   robots?: string | null;
 };
 
+function absoluteAssetUrl(pathOrUrl: string, baseUrl: string): string {
+  const trimmed = pathOrUrl.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    // Image URLs must not pick up site trailingSlash (…png/)
+    return trimmed.replace(/\/+$/, "");
+  }
+  const path = mediaUrl(trimmed);
+  const origin = baseUrl.replace(/\/+$/, "");
+  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 function buildMetadataCore(fields: SeoFields, path = "", baseUrl: string): Metadata {
   const title = fields.seoTitle || fields.title;
   const description = fields.metaDescription || undefined;
-  const canonical = fields.canonicalUrl || `${baseUrl}${path}`;
-  const ogImage = fields.ogImage ? (fields.ogImage.startsWith("http") ? fields.ogImage : `${baseUrl}${fields.ogImage}`) : `${baseUrl}/api/og?title=${encodeURIComponent(title)}`;
+  const origin = baseUrl.replace(/\/+$/, "");
+  const canonical = fields.canonicalUrl || `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  const ogImage = fields.ogImage?.trim()
+    ? absoluteAssetUrl(fields.ogImage, origin)
+    : `${origin}/api/og?title=${encodeURIComponent(title)}`;
 
   return {
     title,
