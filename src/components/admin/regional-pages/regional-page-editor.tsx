@@ -145,12 +145,13 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
 
         <TabsContent value="arabic" className="mt-4 space-y-4 rounded-xl border border-stone-200 bg-white p-4">
           <p className="text-xs text-stone-500">
-            Shown by default (right-to-left). Use grid shortcodes for address boxes, e.g.{" "}
+            Opens in <strong>Source</strong> so your HTML stays exact (lists + headings won&apos;t be
+            rewritten). Grid shortcodes:{" "}
             <code className="rounded bg-stone-100 px-1">
               [grid col=&quot;6&quot; border=&quot;1&quot;]Title… Address…[/grid]
             </code>{" "}
-            — <code className="rounded bg-stone-100 px-1">col=&quot;6&quot;</code> is half width,{" "}
-            <code className="rounded bg-stone-100 px-1">col=&quot;4&quot;</code> is one-third.
+            — <code className="rounded bg-stone-100 px-1">col=&quot;6&quot;</code> half width,{" "}
+            <code className="rounded bg-stone-100 px-1">col=&quot;4&quot;</code> one-third.
           </p>
           <RichTextEditor
             value={content.intro.arabicHtml}
@@ -162,17 +163,18 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
               })
             }
             placeholder="Arabic regional content…"
+            preserveHtml
+            defaultSourceMode
           />
         </TabsContent>
 
         <TabsContent value="english" className="mt-4 space-y-4 rounded-xl border border-stone-200 bg-white p-4">
           <p className="text-xs text-stone-500">
-            Shown when visitor clicks the ENGLISH button. For side-by-side address boxes use{" "}
+            Opens in <strong>Source</strong> — paste HTML as-is; it saves without auto-rewrite. Grid:{" "}
             <code className="rounded bg-stone-100 px-1">
               [grid col=&quot;6&quot; border=&quot;1&quot;]DUBAI… Address…[/grid]
             </code>{" "}
-            twice in a row. Optional: <code className="rounded bg-stone-100 px-1">style=&quot;…&quot;</code>{" "}
-            for inline CSS on the box.
+            Optional: <code className="rounded bg-stone-100 px-1">style=&quot;…&quot;</code> on the box.
           </p>
           <RichTextEditor
             value={content.intro.englishHtml}
@@ -184,6 +186,8 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
               })
             }
             placeholder="English regional content…"
+            preserveHtml
+            defaultSourceMode
           />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">

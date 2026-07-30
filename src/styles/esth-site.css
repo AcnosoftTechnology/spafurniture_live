@@ -823,6 +823,31 @@ img{
   color:#43332b;
 }
 
+.esth-regional-intro-copy ul,
+.esth-regional-intro-copy ol{
+  margin:0 0 20px;
+  padding-inline-start:1.4em;
+}
+
+.esth-regional-intro-copy li{
+  margin:0 0 16px;
+  font-size:20px;
+  line-height:1.9;
+  color:#43332b;
+}
+
+.esth-regional-intro-copy li > :first-child{
+  margin-top:0;
+}
+
+.esth-regional-intro-copy li > :last-child{
+  margin-bottom:0;
+}
+
+.esth-regional-intro-copy li p{
+  margin:0 0 8px;
+}
+
 .esth-regional-intro-copy strong{
   display:block;
   margin:28px 0 12px;

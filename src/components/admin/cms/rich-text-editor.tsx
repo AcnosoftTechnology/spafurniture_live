@@ -2,6 +2,7 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { ListItem } from "@tiptap/extension-list";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,6 +32,11 @@ import { cn, mediaUrl } from "@/lib/utils";
 import { MediaPickerDialog, type MediaItem } from "@/components/admin/cms/media-picker-dialog";
 import { uploadMediaFile } from "@/lib/admin-media-upload";
 import { toast } from "sonner";
+
+/** Allow <li><h4>…</h4><p>…</p></li> — default TipTap requires paragraph-first. */
+const FlexibleListItem = ListItem.extend({
+  content: "block+",
+});
 
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 type HeadingLevel = (typeof HEADING_LEVELS)[number];
@@ -95,6 +101,13 @@ type RichTextEditorProps = {
   /** Fired on each edit with serialized HTML (for legacy/page SEO storage). */
   onHtmlChange?: (html: string) => void;
   placeholder?: string;
+  /**
+   * Keep string HTML as the source of truth.
+   * Source mode saves raw HTML without TipTap rewriting it.
+   */
+  preserveHtml?: boolean;
+  /** Open in HTML source mode (recommended with preserveHtml). */
+  defaultSourceMode?: boolean;
 };
 
 export function RichTextEditor({
@@ -103,18 +116,28 @@ export function RichTextEditor({
   onPlainTextChange,
   onHtmlChange,
   placeholder,
+  preserveHtml = false,
+  defaultSourceMode = false,
 }: RichTextEditorProps) {
   const [mediaOpen, setMediaOpen] = useState(false);
-  const [sourceMode, setSourceMode] = useState(false);
-  const [sourceHtml, setSourceHtml] = useState("");
+  const [sourceMode, setSourceMode] = useState(defaultSourceMode);
+  const [sourceHtml, setSourceHtml] = useState(() =>
+    typeof value === "string" ? value : "",
+  );
   const fileRef = useRef<HTMLInputElement>(null);
+  const lastAppliedRawRef = useRef<string | null>(null);
+  const stringValue = typeof value === "string" ? value : null;
 
   const initialContent =
     typeof value === "string" ? value : (value as object | undefined);
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3, 4, 5, 6] },
+        listItem: false,
+      }),
+      FlexibleListItem,
       Link.configure({ openOnClick: false }),
       Image.configure({ inline: false, allowBase64: false }),
     ],
@@ -123,7 +146,9 @@ export function RichTextEditor({
     onUpdate: ({ editor: ed }) => {
       onChange(ed.getJSON());
       onPlainTextChange?.(ed.getText().replace(/\s+/g, " ").trim());
-      onHtmlChange?.(ed.getHTML());
+      if (!preserveHtml || !sourceMode) {
+        onHtmlChange?.(ed.getHTML());
+      }
     },
     editorProps: {
       attributes: {
@@ -136,36 +161,61 @@ export function RichTextEditor({
     if (!editor || value == null || sourceMode) return;
 
     if (typeof value === "string") {
+      if (preserveHtml) {
+        if (lastAppliedRawRef.current === value) return;
+        lastAppliedRawRef.current = value;
+        editor.commands.setContent(value, { emitUpdate: false });
+        return;
+      }
+
       const html = value.trim();
       if (html && editor.getHTML() !== html) {
-        editor.commands.setContent(html);
+        editor.commands.setContent(html, { emitUpdate: false });
       }
       return;
     }
 
     if (typeof value === "object" && JSON.stringify(editor.getJSON()) !== JSON.stringify(value)) {
-      editor.commands.setContent(value as object);
+      editor.commands.setContent(value as object, { emitUpdate: false });
     }
-  }, [value, editor, sourceMode]);
+  }, [value, editor, sourceMode, preserveHtml]);
+
+  const commitSourceHtml = useCallback(
+    (html: string) => {
+      setSourceHtml(html);
+      lastAppliedRawRef.current = html;
+      onHtmlChange?.(html);
+      if (editor && !preserveHtml) {
+        editor.commands.setContent(html, { emitUpdate: false });
+        onChange(editor.getJSON());
+        onPlainTextChange?.(editor.getText().replace(/\s+/g, " ").trim());
+      }
+    },
+    [editor, onChange, onHtmlChange, onPlainTextChange, preserveHtml],
+  );
 
   const applySourceHtml = useCallback(() => {
     if (!editor) return;
-    editor.commands.setContent(sourceHtml, { emitUpdate: true });
+    lastAppliedRawRef.current = sourceHtml;
+    // Always persist the raw source first — do not replace with TipTap's getHTML().
+    onHtmlChange?.(sourceHtml);
+    editor.commands.setContent(sourceHtml, { emitUpdate: false });
     onChange(editor.getJSON());
     onPlainTextChange?.(editor.getText().replace(/\s+/g, " ").trim());
-    onHtmlChange?.(editor.getHTML());
   }, [editor, onChange, onHtmlChange, onPlainTextChange, sourceHtml]);
 
   const toggleSourceMode = useCallback(() => {
     if (!editor) return;
     if (!sourceMode) {
-      setSourceHtml(editor.getHTML());
+      const raw =
+        preserveHtml && stringValue != null ? stringValue : editor.getHTML();
+      setSourceHtml(raw);
       setSourceMode(true);
       return;
     }
     applySourceHtml();
     setSourceMode(false);
-  }, [applySourceHtml, editor, sourceMode]);
+  }, [applySourceHtml, editor, preserveHtml, sourceMode, stringValue]);
 
   const insertImage = useCallback(
     (src: string, alt?: string) => {
@@ -274,11 +324,23 @@ export function RichTextEditor({
             }}
           />
         </div>
+        {preserveHtml && sourceMode ? (
+          <p className="border-b border-amber-100 bg-amber-50 px-3 py-1.5 text-[11px] leading-snug text-amber-900">
+            Source HTML saves exactly as typed. Switch to Visual only for simple edits — complex lists
+            with headings are safest in Source.
+          </p>
+        ) : null}
         <div className="relative max-h-[min(50vh,28rem)] overflow-y-auto overscroll-contain">
           {sourceMode ? (
             <textarea
               value={sourceHtml}
-              onChange={(e) => setSourceHtml(e.target.value)}
+              onChange={(e) => {
+                if (preserveHtml) {
+                  commitSourceHtml(e.target.value);
+                } else {
+                  setSourceHtml(e.target.value);
+                }
+              }}
               spellCheck={false}
               className={cn(
                 "min-h-[12rem] w-full resize-y border-0 bg-white px-4 py-3 font-mono text-xs leading-relaxed text-stone-800",
