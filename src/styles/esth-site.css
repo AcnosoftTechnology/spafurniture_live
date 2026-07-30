@@ -792,6 +792,30 @@ img{
   margin:0 0 24px;
 }
 
+.esth-regional-intro-copy h2{
+  font-size:28px;
+  line-height:1.4;
+  font-weight:700;
+  color:#2f241e;
+  margin:28px 0 16px;
+}
+
+.esth-regional-intro-copy h3{
+  font-size:24px;
+  line-height:1.4;
+  font-weight:700;
+  color:#2f241e;
+  margin:24px 0 14px;
+}
+
+.esth-regional-intro-copy h4{
+  font-size:21px;
+  line-height:1.45;
+  font-weight:700;
+  color:#2f241e;
+  margin:22px 0 12px;
+}
+
 .esth-regional-intro-copy p{
   margin:0 0 20px;
   font-size:20px;
@@ -808,6 +832,9 @@ img{
 }
 
 .esth-regional-intro-copy h1 strong,
+.esth-regional-intro-copy h2 strong,
+.esth-regional-intro-copy h3 strong,
+.esth-regional-intro-copy h4 strong,
 .esth-regional-intro-copy .esth-regional-intro-title strong{
   display:inline;
   margin:0;
@@ -905,6 +932,18 @@ img{
   font-size:36px;
 }
 
+.esth-regional-intro-content.is-arabic .esth-regional-intro-copy h2{
+  font-size:30px;
+}
+
+.esth-regional-intro-content.is-arabic .esth-regional-intro-copy h3{
+  font-size:26px;
+}
+
+.esth-regional-intro-content.is-arabic .esth-regional-intro-copy h4{
+  font-size:22px;
+}
+
 .esth-regional-intro-content.is-arabic .esth-regional-intro-copy p{
   font-size:20px;
 }
@@ -914,6 +953,9 @@ img{
 }
 
 .esth-regional-intro-content.is-arabic .esth-regional-intro-copy h1 strong,
+.esth-regional-intro-content.is-arabic .esth-regional-intro-copy h2 strong,
+.esth-regional-intro-content.is-arabic .esth-regional-intro-copy h3 strong,
+.esth-regional-intro-content.is-arabic .esth-regional-intro-copy h4 strong,
 .esth-regional-intro-content.is-arabic .esth-regional-intro-copy .esth-regional-intro-title strong{
   font-size:inherit;
 }
@@ -1201,6 +1243,9 @@ img{
   .esth-regional-intro-copy p{font-size:20px;}
   .esth-regional-intro-copy .esth-regional-intro-title,
   .esth-regional-intro-copy h1{font-size:28px;}
+  .esth-regional-intro-copy h2{font-size:24px;}
+  .esth-regional-intro-copy h3{font-size:22px;}
+  .esth-regional-intro-copy h4{font-size:20px;}
   .esth-regional-intro-content.is-arabic .esth-regional-intro-copy,
   .esth-regional-intro-content.is-arabic .esth-regional-intro-copy p{font-size:20px;}
   .esth-regional-intro-copy .esth-regional-grid__item,
@@ -1209,6 +1254,9 @@ img{
   .esth-regional-intro-copy .esth-regional-grid__item ol{font-size:18px;}
   .esth-regional-intro-content.is-arabic .esth-regional-intro-copy .esth-regional-intro-title,
   .esth-regional-intro-content.is-arabic .esth-regional-intro-copy h1{font-size:31px;}
+  .esth-regional-intro-content.is-arabic .esth-regional-intro-copy h2{font-size:26px;}
+  .esth-regional-intro-content.is-arabic .esth-regional-intro-copy h3{font-size:24px;}
+  .esth-regional-intro-content.is-arabic .esth-regional-intro-copy h4{font-size:21px;}
   .esth-regional-intro-content.is-arabic,
   .esth-regional-intro-content.is-english{text-align:center;}
   .esth-premium-banner--regional{
