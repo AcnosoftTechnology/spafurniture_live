@@ -512,6 +512,16 @@ img{
     top:16px;
     right:45px;
   }
+
+  .esth-regional-address-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+
+  .esth-regional-address-grid:has(.esth-regional-address-col:nth-child(3):last-child){
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+  }
+ 
+
 }
 
 @media (min-width:320px) and (max-width:768px){
@@ -522,15 +532,8 @@ img{
   }
 }
 
-@media (min-width: 768px){
-  .esth-regional-address-grid{
-    grid-template-columns:repeat(2, minmax(0, 1fr));
-  }
+@media (max-width: 768px){
 
-  .esth-regional-address-grid:has(.esth-regional-address-col:nth-child(3):last-child){
-    grid-template-columns:repeat(3, minmax(0, 1fr));
-  }
- 
   #regional-intro .esth-regional-intro-copy ul li {
     color: #43332b;
     width: 100%;
