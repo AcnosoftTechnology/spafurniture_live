@@ -843,6 +843,7 @@ img{
     font-weight: 600;
     line-height: 1.45;
     text-align: left;
+    text-transform: uppercase;
 }
 
 .esth-regional-intro-copy p{
