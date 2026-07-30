@@ -821,11 +821,10 @@ img{
 }
 
 .esth-regional-intro-copy h2{
-  font-size:28px;
-  line-height:1.4;
-  font-weight:700;
-  color:#2f241e;
-  margin:28px 0 16px;
+  margin: 10px 0px;
+  font-size: 26px;
+  line-height: 1.5;
+  color:#2f241e;  
 }
 
 .esth-regional-intro-copy h3{
@@ -8456,6 +8455,11 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
   text-align: left;
 }
 
+#regional-intro .esth-regional-intro-copy h1{
+   font-size: 20px;
+   line-height: 1.9;
+   font-weight:inherit!important;
+}
 
 
 @media (max-width: 900px){
