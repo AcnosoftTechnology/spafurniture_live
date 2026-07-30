@@ -808,19 +808,19 @@ img{
   margin:24px 0 14px;
 }
 
-.esth-regional-intro-copy h4{
-  font-size:21px;
-  line-height:1.45;
-  font-weight:700;
-  color:#2f241e;
-  margin:22px 0 12px;
+#regional-intro .esth-regional-intro-copy h4{
+    color: #2f241e;
+    margin: 20px 0 0px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.45;
 }
 
 .esth-regional-intro-copy p{
   margin:0 0 20px;
   font-size:20px;
   line-height:1.9;
-  color:#43332b;
+  color:#43332b;  
 }
 
 .esth-regional-intro-copy ul,
@@ -830,20 +830,23 @@ img{
   list-style-position:outside;
 }
 
-.esth-regional-intro-copy ul{
-  list-style-type:disc;
+#regional-intro .esth-regional-intro-copy ul{
+    list-style-type: disc;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .esth-regional-intro-copy ol{
   list-style-type:decimal;
 }
 
-.esth-regional-intro-copy li{
-  display:list-item;
-  margin:0 0 16px;
-  font-size:20px;
-  line-height:1.9;
-  color:#43332b;
+#regional-intro .esth-regional-intro-copy li{
+    color: #43332b;
+    margin: 0 0 15px;
+    font-size: 18px;
+    line-height: 1.9;
+    display: list-item;
+    width: 33%;
 }
 
 .esth-regional-intro-copy li > :first-child{
@@ -8423,6 +8426,15 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 .esth-event-readmore-modal{
   z-index: 999;
 }
+
+#regional-intro .esth-regional-intro-copy p{
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+}
+
+
 
 @media (max-width: 900px){
   .esth-events-shell{
