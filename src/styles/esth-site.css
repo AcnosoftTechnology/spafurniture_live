@@ -847,6 +847,7 @@ img{
     line-height: 1.9;
     display: list-item;
     width: 33%;
+    padding-left:10px;
 }
 
 .esth-regional-intro-copy li > :first-child{
@@ -1230,6 +1231,21 @@ img{
   .esth-regional-address-grid:has(.esth-regional-address-col:nth-child(3):last-child){
     grid-template-columns:repeat(3, minmax(0, 1fr));
   }
+ 
+  #regional-intro .esth-regional-intro-copy li {
+    color: #43332b;
+    width: 100%;
+    padding-left:0px;
+  }
+
+  #regional-intro .esth-regional-intro-copy h4 {
+    text-align: justify;
+  }
+
+  #regional-intro .esth-regional-intro-copy p {
+    text-align: justify;
+  }
+
 }
 
 .esth-regional-address-title,
