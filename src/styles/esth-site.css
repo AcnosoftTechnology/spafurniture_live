@@ -531,10 +531,10 @@ img{
     grid-template-columns:repeat(3, minmax(0, 1fr));
   }
  
-  #regional-intro .esth-regional-intro-copy li {
+  #regional-intro .esth-regional-intro-copy ul li {
     color: #43332b;
     width: 100%;
-    padding-left:0px;
+    padding-right:0px;
   }
 
   #regional-intro .esth-regional-intro-copy h4 {
@@ -839,6 +839,7 @@ img{
     font-size: 18px;
     font-weight: 600;
     line-height: 1.45;
+    text-align: left;
 }
 
 .esth-regional-intro-copy p{
@@ -872,7 +873,7 @@ img{
     line-height: 1.9;
     display: list-item;
     width: 33%;
-    padding-left:10px;
+    padding-right:10px;
 }
 
 .esth-regional-intro-copy li > :first-child{
