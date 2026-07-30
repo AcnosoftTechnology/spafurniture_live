@@ -8456,9 +8456,10 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 }
 
 #regional-intro .esth-regional-intro-copy h1{
-   font-size: 20px;
-   line-height: 1.9;
-   font-weight:inherit!important;
+    font-size: 34px;
+    line-height: 1.4;
+    font-weight: inherit !important;
+    margin: 0px;
 }
 
 
