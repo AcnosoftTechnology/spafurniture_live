@@ -826,10 +826,20 @@ img{
 .esth-regional-intro-copy ul,
 .esth-regional-intro-copy ol{
   margin:0 0 20px;
-  padding-inline-start:1.4em;
+  padding-inline-start:1.5em;
+  list-style-position:outside;
+}
+
+.esth-regional-intro-copy ul{
+  list-style-type:disc;
+}
+
+.esth-regional-intro-copy ol{
+  list-style-type:decimal;
 }
 
 .esth-regional-intro-copy li{
+  display:list-item;
   margin:0 0 16px;
   font-size:20px;
   line-height:1.9;
