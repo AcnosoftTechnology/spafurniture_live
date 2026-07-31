@@ -1303,10 +1303,10 @@ img{
   .esth-regional-intro-copy,
   .esth-regional-intro-copy p{font-size:20px;}
   .esth-regional-intro-copy .esth-regional-intro-title,
-  .esth-regional-intro-copy h1{font-size:28px;}
-  .esth-regional-intro-copy h2{font-size:24px;}
-  .esth-regional-intro-copy h3{font-size:22px;}
-  .esth-regional-intro-copy h4{font-size:20px;}
+  .esth-regional-intro-copy h1{font-size:22px!important;}
+  .esth-regional-intro-copy h2{font-size:19px!important;}
+  .esth-regional-intro-copy h3{font-size:17px;}
+  .esth-regional-intro-copy h4{font-size:16px;}
   .esth-regional-intro-content.is-arabic .esth-regional-intro-copy,
   .esth-regional-intro-content.is-arabic .esth-regional-intro-copy p{font-size:20px;}
   .esth-regional-intro-copy .esth-regional-grid__item,
