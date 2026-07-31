@@ -8020,7 +8020,7 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 .esth-premium-banner--regional .esth-premium-image{
   position:relative !important;
   left:auto !important;
-  top:auto !important;
+  top:auto;
   transform:translateY(var(--esth-regional-media-shift, 15px)) !important;
   align-items:center !important;
   width:100% !important;
