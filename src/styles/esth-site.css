@@ -2806,18 +2806,12 @@ object-fit: contain;
   }
 
   .esth-premium-banner--regional{
-      height: 330px;
-      min-height: 335px;
+      height: 410px;
+      min-height: 410px;
       max-height: 520px;
   }
 
-  .esth-premium-banner--regional .esth-premium-banner-bg{
-    top: -25%;
-   }
-
-.esth-premium-banner--regional .esth-premium-image {
-  top: -15% !important;
-}
+ 
 
   .header-inner,
   .wolfe-head-top{
