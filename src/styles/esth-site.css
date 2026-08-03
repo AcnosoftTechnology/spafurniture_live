@@ -3164,6 +3164,10 @@ object-fit: contain;
     max-width: 90%;
 }
 
+.esth-premium-banner--regional .esth-premium-caption{
+  display:none!important;
+}
+
 
 }
 
