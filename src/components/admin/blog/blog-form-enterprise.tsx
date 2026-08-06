@@ -33,6 +33,8 @@ type BlogInitial = {
   status?: string;
   publishedAt?: string | Date | null;
   scheduledAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
   featuredMediaId?: string | null;
   featuredMedia?: { path: string; webpPath?: string | null } | null;
   seoTitle?: string | null;
@@ -100,6 +102,17 @@ export function BlogFormEnterprise({
     setContent(next);
   }
 
+  function handleStatusChange(next: string) {
+    setStatus(next);
+    if (next === "PUBLISHED" && !publishedAt) {
+      const now = new Date();
+      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+        .toISOString()
+        .slice(0, 16);
+      setPublishedAt(local);
+    }
+  }
+
   async function save() {
     if (!title.trim()) {
       toast.error("Title is required");
@@ -146,14 +159,29 @@ export function BlogFormEnterprise({
       return;
     }
     const data = await res.json();
-    toast.success("Post saved");
+    toast.success(
+      status === "PUBLISHED" ? "Post published" : status === "ARCHIVED" ? "Post archived" : "Draft saved",
+    );
     if (!initial?.id && data?.data?.id) router.push(`/admin/blog/${data.data.id}`);
     else router.refresh();
   }
 
   return (
     <div className="pb-12">
-      <FormToolbar title={title} status={status} previewUrl={previewUrl} saving={saving} onSave={save} backHref="/admin/blog" />
+      <FormToolbar
+        title={title}
+        status={status}
+        previewUrl={previewUrl}
+        saving={saving}
+        onSave={save}
+        backHref="/admin/blog"
+        publishMode
+        alreadyPublished={initial?.status === "PUBLISHED"}
+        onStatusChange={handleStatusChange}
+        publishedAt={publishedAt}
+        onPublishedAtChange={setPublishedAt}
+        createdAt={initial?.createdAt}
+      />
       <SlugField title={title} slug={slug} onTitleChange={setTitle} onSlugChange={setSlug} previewPath="/{slug}" autoSync={!initial?.id} />
 
       <Tabs defaultValue="content" className="mt-6">
@@ -185,6 +213,10 @@ export function BlogFormEnterprise({
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4 rounded-xl border bg-white p-6 dark:bg-stone-950">
+          <p className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+            Status and publish date are also in the top bar (WordPress-style). Use this tab for schedule,
+            featured image, categories, and tags.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Publish date</Label>
@@ -197,7 +229,7 @@ export function BlogFormEnterprise({
           </div>
           <div className="space-y-2">
             <Label>Status</Label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="flex h-10 w-full max-w-xs rounded-md border px-3 text-sm">
+            <select value={status} onChange={(e) => handleStatusChange(e.target.value)} className="flex h-10 w-full max-w-xs rounded-md border px-3 text-sm">
               <option value="DRAFT">Draft</option>
               <option value="PUBLISHED">Published</option>
               <option value="ARCHIVED">Archived</option>
