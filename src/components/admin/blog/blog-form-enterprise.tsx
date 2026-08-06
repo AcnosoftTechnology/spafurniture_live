@@ -21,8 +21,8 @@ import type { OgPanelValue } from "@/components/admin/cms/og-panel";
 import { toast } from "sonner";
 import Image from "next/image";
 import { ImagePlus, X } from "lucide-react";
-import { extractSpEasyAccordionIds } from "@/lib/faq-shortcode";
 import { BlogFaqShortcodePanel } from "@/components/admin/blog/blog-faq-shortcode-panel";
+import { blogContentToHtml } from "@/lib/blog-content-html";
 
 type BlogInitial = {
   id?: string;
@@ -64,8 +64,7 @@ export function BlogFormEnterprise({
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [excerpt, setExcerpt] = useState(initial?.excerpt ?? "");
-  const [content, setContent] = useState<unknown>(initial?.content ?? { type: "doc", content: [] });
-  const [contentHtml, setContentHtml] = useState("");
+  const [content, setContent] = useState<string>(() => blogContentToHtml(initial?.content));
   const [status, setStatus] = useState(initial?.status ?? "DRAFT");
   const [publishedAt, setPublishedAt] = useState(
     initial?.publishedAt ? new Date(initial.publishedAt).toISOString().slice(0, 16) : "",
@@ -95,16 +94,9 @@ export function BlogFormEnterprise({
 
   const previewUrl = useMemo(() => (slug ? `${getBaseUrl()}${blogPostPath(slug)}` : null), [slug]);
 
-  function contentForSave(): unknown {
-    if (typeof content === "string") return content;
-    if (contentHtml && extractSpEasyAccordionIds(contentHtml).length > 0) return contentHtml;
-    return content;
-  }
-
   function insertFaqShortcode(shortcode: string) {
-    const base = typeof content === "string" ? content : contentHtml;
     const snippet = `<p>${shortcode}</p>`;
-    const next = base.trim() ? `${base}\n${snippet}` : snippet;
+    const next = content.trim() ? `${content}\n${snippet}` : snippet;
     setContent(next);
   }
 
@@ -118,7 +110,7 @@ export function BlogFormEnterprise({
       title: title.trim(),
       slug: slug || slugify(title),
       excerpt,
-      content: contentForSave(),
+      content,
       status,
       publishedAt: publishedAt || null,
       scheduledAt: scheduledAt || null,
@@ -174,9 +166,10 @@ export function BlogFormEnterprise({
           <BlogFaqShortcodePanel onInsert={insertFaqShortcode} />
           <RichTextEditor
             value={content}
-            onChange={setContent}
-            onHtmlChange={setContentHtml}
-            placeholder="Write your article..."
+            onChange={() => {}}
+            onHtmlChange={setContent}
+            placeholder="Write your article… Paste from Word or Google Docs to keep formatting."
+            preserveHtml
           />
         </TabsContent>
 

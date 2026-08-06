@@ -1,12 +1,5 @@
 import { sanitizeRichHtml } from "@/lib/sanitize-html";
-
-type ContentDoc = {
-  type?: string;
-  content?: Array<{
-    type?: string;
-    content?: Array<{ type?: string; text?: string }>;
-  }>;
-};
+import { blogContentToHtml, isTipTapDoc } from "@/lib/blog-content-html";
 
 export function ContentRenderer({
   content,
@@ -17,32 +10,20 @@ export function ContentRenderer({
 }) {
   if (!content) return null;
 
-  if (typeof content === "string") {
-    let html = "";
-    try {
-      html = sanitizeRichHtml(content);
-    } catch {
-      return null;
-    }
-    if (!html.trim()) return null;
-    return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />;
-  }
+  const html =
+    typeof content === "string" || isTipTapDoc(content)
+      ? blogContentToHtml(content)
+      : "";
 
-  const doc = content as ContentDoc;
-  if (doc.type === "doc" && doc.content) {
-    return (
-      <div className={className}>
-        {doc.content.map((node, i) => {
-          if (node.type === "paragraph") {
-            const text = node.content?.map((c) => c.text).join("") ?? "";
-            if (!text.trim()) return null;
-            return <p key={i}>{text}</p>;
-          }
-          return null;
-        })}
-      </div>
-    );
-  }
+  if (!html.trim()) return null;
 
-  return null;
+  let safe = "";
+  try {
+    safe = sanitizeRichHtml(html);
+  } catch {
+    return null;
+  }
+  if (!safe.trim()) return null;
+
+  return <div className={className} dangerouslySetInnerHTML={{ __html: safe }} />;
 }

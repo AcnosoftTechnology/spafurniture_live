@@ -1,15 +1,12 @@
 "use client";
 
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { ListItem } from "@tiptap/extension-list";
-import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import {
   Bold,
   Italic,
+  Underline as UnderlineIcon,
   List,
   ListOrdered,
   Link2,
@@ -19,6 +16,7 @@ import {
   Quote,
   Minus,
   Code2,
+  TableIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,11 +30,8 @@ import { cn, mediaUrl } from "@/lib/utils";
 import { MediaPickerDialog, type MediaItem } from "@/components/admin/cms/media-picker-dialog";
 import { uploadMediaFile } from "@/lib/admin-media-upload";
 import { toast } from "sonner";
-
-/** Allow <li><h4>…</h4><p>…</p></li> — default TipTap requires paragraph-first. */
-const FlexibleListItem = ListItem.extend({
-  content: "block+",
-});
+import { cleanPastedHtml } from "@/lib/clean-pasted-html";
+import { getBlogEditorExtensions } from "@/lib/tiptap-blog-extensions";
 
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 type HeadingLevel = (typeof HEADING_LEVELS)[number];
@@ -106,7 +101,7 @@ type RichTextEditorProps = {
    * Source mode saves raw HTML without TipTap rewriting it.
    */
   preserveHtml?: boolean;
-  /** Open in HTML source mode (recommended with preserveHtml). */
+  /** Open in HTML source mode (recommended with preserveHtml for complex markup). */
   defaultSourceMode?: boolean;
 };
 
@@ -127,32 +122,29 @@ export function RichTextEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const lastAppliedRawRef = useRef<string | null>(null);
   const stringValue = typeof value === "string" ? value : null;
+  const sourceModeRef = useRef(sourceMode);
+  sourceModeRef.current = sourceMode;
 
   const initialContent =
     typeof value === "string" ? value : (value as object | undefined);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3, 4, 5, 6] },
-        listItem: false,
-      }),
-      FlexibleListItem,
-      Link.configure({ openOnClick: false }),
-      Image.configure({ inline: false, allowBase64: false }),
-    ],
+    extensions: getBlogEditorExtensions(),
     content: initialContent,
     immediatelyRender: false,
     onUpdate: ({ editor: ed }) => {
       onChange(ed.getJSON());
       onPlainTextChange?.(ed.getText().replace(/\s+/g, " ").trim());
-      if (!preserveHtml || !sourceMode) {
+      if (!preserveHtml || !sourceModeRef.current) {
         onHtmlChange?.(ed.getHTML());
       }
     },
     editorProps: {
       attributes: {
         class: "focus:outline-none",
+      },
+      transformPastedHTML(html) {
+        return cleanPastedHtml(html);
       },
     },
   });
@@ -197,7 +189,6 @@ export function RichTextEditor({
   const applySourceHtml = useCallback(() => {
     if (!editor) return;
     lastAppliedRawRef.current = sourceHtml;
-    // Always persist the raw source first — do not replace with TipTap's getHTML().
     onHtmlChange?.(sourceHtml);
     editor.commands.setContent(sourceHtml, { emitUpdate: false });
     onChange(editor.getJSON());
@@ -242,11 +233,21 @@ export function RichTextEditor({
     if (url) editor.chain().focus().setLink({ href: url }).run();
   }, [editor]);
 
+  const insertTable = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  }, [editor]);
+
   if (!editor) return <div className="h-80 animate-pulse rounded-lg bg-stone-100" />;
 
   const tools = [
     { icon: Bold, action: () => editor.chain().focus().toggleBold().run(), active: editor.isActive("bold") },
     { icon: Italic, action: () => editor.chain().focus().toggleItalic().run(), active: editor.isActive("italic") },
+    {
+      icon: UnderlineIcon,
+      action: () => editor.chain().focus().toggleUnderline().run(),
+      active: editor.isActive("underline"),
+    },
     { icon: List, action: () => editor.chain().focus().toggleBulletList().run(), active: editor.isActive("bulletList") },
     {
       icon: ListOrdered,
@@ -254,6 +255,7 @@ export function RichTextEditor({
       active: editor.isActive("orderedList"),
     },
     { icon: Quote, action: () => editor.chain().focus().toggleBlockquote().run(), active: editor.isActive("blockquote") },
+    { icon: TableIcon, action: insertTable, active: editor.isActive("table") },
     { icon: Minus, action: () => editor.chain().focus().setHorizontalRule().run(), active: false },
     { icon: Link2, action: setLink, active: editor.isActive("link") },
     { icon: Undo, action: () => editor.chain().focus().undo().run(), active: false },
@@ -324,13 +326,13 @@ export function RichTextEditor({
             }}
           />
         </div>
-        {preserveHtml && sourceMode ? (
-          <p className="border-b border-amber-100 bg-amber-50 px-3 py-1.5 text-[11px] leading-snug text-amber-900">
-            Source HTML saves exactly as typed. Switch to Visual only for simple edits — complex lists
-            with headings are safest in Source.
+        {preserveHtml ? (
+          <p className="border-b border-stone-100 bg-stone-50 px-3 py-1.5 text-[11px] leading-snug text-stone-600">
+            Paste from Word / Google Docs in Visual mode — headings, lists, tables, and bold/italic are
+            kept. Use Source for exact HTML (shortcodes, custom markup).
           </p>
         ) : null}
-        <div className="relative max-h-[min(50vh,28rem)] overflow-y-auto overscroll-contain">
+        <div className="relative max-h-[min(70vh,40rem)] overflow-y-auto overscroll-contain">
           {sourceMode ? (
             <textarea
               value={sourceHtml}
@@ -343,7 +345,7 @@ export function RichTextEditor({
               }}
               spellCheck={false}
               className={cn(
-                "min-h-[12rem] w-full resize-y border-0 bg-white px-4 py-3 font-mono text-xs leading-relaxed text-stone-800",
+                "min-h-[16rem] w-full resize-y border-0 bg-white px-4 py-3 font-mono text-xs leading-relaxed text-stone-800",
                 "outline-none focus:ring-0 dark:bg-stone-950 dark:text-stone-100",
               )}
               aria-label="HTML source code"
@@ -353,11 +355,14 @@ export function RichTextEditor({
             <EditorContent
               editor={editor}
               className={cn(
-                "[&_.tiptap]:prose [&_.tiptap]:prose-sm [&_.tiptap]:max-w-none [&_.tiptap]:min-h-[12rem]",
+                "[&_.tiptap]:prose [&_.tiptap]:prose-sm [&_.tiptap]:max-w-none [&_.tiptap]:min-h-[16rem]",
                 "[&_.tiptap]:px-4 [&_.tiptap]:py-3 [&_.tiptap]:outline-none dark:[&_.tiptap]:prose-invert",
                 "[&_.tiptap_h1]:text-2xl [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:text-lg",
                 "[&_.tiptap_h4]:text-base [&_.tiptap_h5]:text-sm [&_.tiptap_h6]:text-sm",
                 "[&_.tiptap_img]:max-w-full [&_.tiptap_img]:rounded-md",
+                "[&_.tiptap_table]:w-full [&_.tiptap_table]:border-collapse",
+                "[&_.tiptap_td]:border [&_.tiptap_td]:border-stone-300 [&_.tiptap_td]:px-2 [&_.tiptap_td]:py-1",
+                "[&_.tiptap_th]:border [&_.tiptap_th]:border-stone-300 [&_.tiptap_th]:bg-stone-100 [&_.tiptap_th]:px-2 [&_.tiptap_th]:py-1",
               )}
             />
           )}
