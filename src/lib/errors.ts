@@ -30,6 +30,27 @@ export function toErrorResponse(error: unknown) {
       { status: error.status },
     );
   }
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  ) {
+    const target = (error as { meta?: { target?: string[] } }).meta?.target;
+    const field = target?.includes("slug") ? "slug" : target?.join(", ") || "field";
+    return Response.json(
+      {
+        error: {
+          code: "CONFLICT",
+          message:
+            field === "slug"
+              ? "This URL slug is already used by another post. Change the slug and try again."
+              : `A record with this ${field} already exists.`,
+        },
+      },
+      { status: 409 },
+    );
+  }
   if (error instanceof Error && error.message) {
     const smtpMessage = smtpErrorMessage(error);
     return Response.json(

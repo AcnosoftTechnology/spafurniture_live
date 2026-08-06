@@ -46,6 +46,7 @@ function getActiveBlockFormat(editor: Editor): BlockFormat {
 
 function HeadingSelect({ editor }: { editor: Editor }) {
   const [block, setBlock] = useState<BlockFormat>(() => getActiveBlockFormat(editor));
+  const savedSelection = useRef<{ from: number; to: number } | null>(null);
 
   useEffect(() => {
     const sync = () => setBlock(getActiveBlockFormat(editor));
@@ -62,18 +63,30 @@ function HeadingSelect({ editor }: { editor: Editor }) {
       value={block}
       onValueChange={(value) => {
         const format = value as BlockFormat;
+        const sel = savedSelection.current;
+        const chain = editor.chain().focus();
+        if (sel) chain.setTextSelection(sel);
         if (format === "paragraph") {
-          editor.chain().focus().setParagraph().run();
+          chain.setParagraph().run();
         } else {
           const level = Number(format.slice(1)) as HeadingLevel;
-          editor.chain().focus().setHeading({ level }).run();
+          chain.setHeading({ level }).run();
         }
         setBlock(format);
+        savedSelection.current = null;
       }}
     >
       <SelectTrigger
         className="h-8 w-[7.25rem] border-0 bg-transparent px-2 text-xs shadow-none focus:ring-0"
         aria-label="Heading level"
+        onMouseDown={(e) => {
+          // Keep TipTap selection when Radix Select steals focus.
+          e.preventDefault();
+          savedSelection.current = {
+            from: editor.state.selection.from,
+            to: editor.state.selection.to,
+          };
+        }}
       >
         <SelectValue />
       </SelectTrigger>
@@ -136,7 +149,10 @@ export function RichTextEditor({
       onChange(ed.getJSON());
       onPlainTextChange?.(ed.getText().replace(/\s+/g, " ").trim());
       if (!preserveHtml || !sourceModeRef.current) {
-        onHtmlChange?.(ed.getHTML());
+        const html = ed.getHTML();
+        // Mark as applied so the value-sync effect does not setContent() and jump the cursor.
+        lastAppliedRawRef.current = html;
+        onHtmlChange?.(html);
       }
     },
     editorProps: {
@@ -151,6 +167,8 @@ export function RichTextEditor({
 
   useEffect(() => {
     if (!editor || value == null || sourceMode) return;
+    // Never reset document while the user is typing/formatting — that jumps the caret.
+    if (editor.isFocused) return;
 
     if (typeof value === "string") {
       if (preserveHtml) {
@@ -276,6 +294,7 @@ export function RichTextEditor({
               size="icon"
               disabled={sourceMode}
               className={cn("h-8 w-8", active && "bg-stone-200 dark:bg-stone-800")}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={action}
             >
               <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -287,6 +306,7 @@ export function RichTextEditor({
             variant="ghost"
             size="sm"
             className={cn("h-8 gap-1 text-xs", sourceMode && "bg-stone-200 dark:bg-stone-800")}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={toggleSourceMode}
           >
             <Code2 className="h-3.5 w-3.5" />
@@ -298,6 +318,7 @@ export function RichTextEditor({
             size="sm"
             className="h-8 gap-1 text-xs"
             disabled={sourceMode}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => fileRef.current?.click()}
           >
             <ImageIcon className="h-3.5 w-3.5" />
@@ -309,6 +330,7 @@ export function RichTextEditor({
             size="sm"
             className="h-8 gap-1 text-xs"
             disabled={sourceMode}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => setMediaOpen(true)}
           >
             <ImageIcon className="h-3.5 w-3.5" />

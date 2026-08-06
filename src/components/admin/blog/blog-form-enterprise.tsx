@@ -105,6 +105,10 @@ export function BlogFormEnterprise({
       toast.error("Title is required");
       return;
     }
+    if (!initial?.id && !session?.user?.id) {
+      toast.error("Session not ready — wait a moment and try Save again.");
+      return;
+    }
     setSaving(true);
     const payload = {
       title: title.trim(),
@@ -131,7 +135,14 @@ export function BlogFormEnterprise({
     setSaving(false);
 
     if (!res.ok) {
-      toast.error("Failed to save post");
+      let message = "Failed to save post";
+      try {
+        const json = (await res.json()) as { error?: { message?: string; code?: string } };
+        if (json.error?.message) message = json.error.message;
+      } catch {
+        /* ignore parse errors */
+      }
+      toast.error(message);
       return;
     }
     const data = await res.json();

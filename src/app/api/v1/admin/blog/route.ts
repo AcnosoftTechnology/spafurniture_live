@@ -47,11 +47,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { error } = await requireAdminSession();
-    if (error) return error;
+    const { session, error } = await requireAdminSession();
+    if (error || !session) return error;
     const body = await request.json();
-    if (!body.authorId) return jsonError("VALIDATION_ERROR", "Author required", 400);
-    const post = await saveBlogPostAdmin(null, body);
+    const authorId = (body.authorId as string | undefined) || session.user.id;
+    if (!authorId) return jsonError("VALIDATION_ERROR", "Author required — please sign in again.", 400);
+    const post = await saveBlogPostAdmin(null, { ...body, authorId });
     revalidatePath("/blog");
     revalidateBlogArchivePaths(post?.publishedAt);
     if (post?.slug) revalidatePath(blogPostPath(post.slug));
