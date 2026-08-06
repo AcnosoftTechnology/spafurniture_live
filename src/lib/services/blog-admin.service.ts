@@ -2,12 +2,24 @@ import { prisma } from "@/lib/prisma";
 import type { BlogAdminPayload } from "@/types/cms";
 import type { ContentStatus, Prisma } from "@prisma/client";
 
-function blogMediaRelations(data: BlogAdminPayload): Pick<Prisma.BlogPostUpdateInput, "featuredMedia" | "ogImage"> {
+function blogMediaForUpdate(
+  data: BlogAdminPayload,
+): Pick<Prisma.BlogPostUpdateInput, "featuredMedia" | "ogImage"> {
   return {
     featuredMedia: data.featuredMediaId
       ? { connect: { id: data.featuredMediaId } }
       : { disconnect: true },
     ogImage: data.ogImageId ? { connect: { id: data.ogImageId } } : { disconnect: true },
+  };
+}
+
+/** Create cannot use `disconnect` — omit relation when no media is set. */
+function blogMediaForCreate(
+  data: BlogAdminPayload,
+): Pick<Prisma.BlogPostCreateInput, "featuredMedia" | "ogImage"> {
+  return {
+    ...(data.featuredMediaId ? { featuredMedia: { connect: { id: data.featuredMediaId } } } : {}),
+    ...(data.ogImageId ? { ogImage: { connect: { id: data.ogImageId } } } : {}),
   };
 }
 
@@ -27,15 +39,14 @@ function resolvePublishedAt(
   return null;
 }
 
-export async function saveBlogPostAdmin(id: string | null, data: BlogAdminPayload) {
+function blogPostFields(data: BlogAdminPayload) {
   const status = (data.status ?? "DRAFT") as ContentStatus;
-  const base: Prisma.BlogPostUpdateInput = {
+  return {
     title: data.title,
     slug: data.slug,
     excerpt: data.excerpt || null,
     content: data.content ?? undefined,
     status,
-    ...blogMediaRelations(data),
     publishedAt: resolvePublishedAt(status, data.publishedAt, data.scheduledAt),
     scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
     seoTitle: data.seoTitle || null,
@@ -47,19 +58,30 @@ export async function saveBlogPostAdmin(id: string | null, data: BlogAdminPayloa
     ogDescription: data.ogDescription || null,
     twitterCard: data.twitterCard || "summary_large_image",
   };
+}
+
+export async function saveBlogPostAdmin(id: string | null, data: BlogAdminPayload) {
+  const fields = blogPostFields(data);
 
   return prisma.$transaction(async (tx) => {
     let postId = id;
 
     if (postId) {
-      await tx.blogPost.update({ where: { id: postId }, data: base });
+      await tx.blogPost.update({
+        where: { id: postId },
+        data: {
+          ...fields,
+          ...blogMediaForUpdate(data),
+        },
+      });
       await tx.blogPostCategory.deleteMany({ where: { postId } });
       await tx.blogPostTag.deleteMany({ where: { postId } });
     } else {
       if (!data.authorId) throw new Error("authorId required");
       const created = await tx.blogPost.create({
         data: {
-          ...(base as Prisma.BlogPostCreateInput),
+          ...fields,
+          ...blogMediaForCreate(data),
           author: { connect: { id: data.authorId } },
         },
       });
