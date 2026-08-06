@@ -1,9 +1,9 @@
 import StarterKit from "@tiptap/starter-kit";
 import { ListItem } from "@tiptap/extension-list";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
 import { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
 import type { Extensions } from "@tiptap/core";
+import { getResizableImageExtension } from "@/lib/tiptap-resizable-image";
 
 /** Allow <li><h4>…</h4><p>…</p></li> — default TipTap requires paragraph-first. */
 export const FlexibleListItem = ListItem.extend({
@@ -13,6 +13,11 @@ export const FlexibleListItem = ListItem.extend({
 type BlogEditorOptions = {
   /** Regional intro HTML with headings inside list items. Default false for normal blog lists. */
   flexibleListItems?: boolean;
+  /**
+   * Extra extensions (e.g. React NodeView image for admin).
+   * When set, replaces the default resizable image base.
+   */
+  imageExtension?: Extensions[number];
 };
 
 /** Shared TipTap schema for blog admin + generateHTML on the front. */
@@ -27,7 +32,7 @@ export function getBlogEditorExtensions(options?: BlogEditorOptions): Extensions
     }),
     flexibleListItems ? FlexibleListItem : ListItem,
     Link.configure({ openOnClick: false }),
-    Image.configure({ inline: false, allowBase64: false }),
+    options?.imageExtension ?? getResizableImageExtension(),
     Table.configure({ resizable: false }),
     TableRow,
     TableHeader,

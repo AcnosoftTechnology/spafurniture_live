@@ -32,6 +32,7 @@ import { uploadMediaFile } from "@/lib/admin-media-upload";
 import { toast } from "sonner";
 import { cleanPastedHtml } from "@/lib/clean-pasted-html";
 import { getBlogEditorExtensions } from "@/lib/tiptap-blog-extensions";
+import { ResizableImage } from "@/components/admin/cms/resizable-image-extension";
 
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 type HeadingLevel = (typeof HEADING_LEVELS)[number];
@@ -146,7 +147,10 @@ export function RichTextEditor({
     typeof value === "string" ? value : (value as object | undefined);
 
   const editor = useEditor({
-    extensions: getBlogEditorExtensions({ flexibleListItems }),
+    extensions: getBlogEditorExtensions({
+      flexibleListItems,
+      imageExtension: ResizableImage,
+    }),
     content: initialContent,
     immediatelyRender: false,
     onUpdate: ({ editor: ed }) => {
@@ -422,6 +426,8 @@ export function RichTextEditor({
                 "[&_.tiptap_li]:my-1 [&_.tiptap_li]:leading-relaxed",
                 "[&_.tiptap_li_p]:my-0",
                 "[&_.tiptap_img]:max-w-full [&_.tiptap_img]:rounded-md",
+                "[&_.tiptap_.tiptap-image-node]:my-3",
+                "[&_.tiptap_.tiptap-image-node.is-selected]:z-[1]",
                 "[&_.tiptap_table]:w-full [&_.tiptap_table]:border-collapse",
                 "[&_.tiptap_td]:border [&_.tiptap_td]:border-stone-300 [&_.tiptap_td]:px-2 [&_.tiptap_td]:py-1",
                 "[&_.tiptap_th]:border [&_.tiptap_th]:border-stone-300 [&_.tiptap_th]:bg-stone-100 [&_.tiptap_th]:px-2 [&_.tiptap_th]:py-1",

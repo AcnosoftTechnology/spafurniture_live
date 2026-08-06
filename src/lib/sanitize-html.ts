@@ -33,7 +33,7 @@ const defaultOptions: sanitizeHtml.IOptions = {
   ],
   allowedAttributes: {
     ...sanitizeHtml.defaults.allowedAttributes,
-    img: ["src", "alt", "title", "width", "height", "class"],
+    img: ["src", "alt", "title", "width", "height", "class", "style"],
     a: ["href", "name", "target", "rel", "class"],
     video: ["src", "controls", "width", "height"],
     source: ["src", "type"],
