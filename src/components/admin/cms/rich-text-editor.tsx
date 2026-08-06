@@ -116,6 +116,8 @@ type RichTextEditorProps = {
   preserveHtml?: boolean;
   /** Open in HTML source mode (recommended with preserveHtml for complex markup). */
   defaultSourceMode?: boolean;
+  /** Allow headings/blocks inside list items (regional pages). */
+  flexibleListItems?: boolean;
 };
 
 export function RichTextEditor({
@@ -126,6 +128,7 @@ export function RichTextEditor({
   placeholder,
   preserveHtml = false,
   defaultSourceMode = false,
+  flexibleListItems = false,
 }: RichTextEditorProps) {
   const [mediaOpen, setMediaOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState(defaultSourceMode);
@@ -134,6 +137,7 @@ export function RichTextEditor({
   );
   const fileRef = useRef<HTMLInputElement>(null);
   const lastAppliedRawRef = useRef<string | null>(null);
+  const savedSelectionRef = useRef<{ from: number; to: number } | null>(null);
   const stringValue = typeof value === "string" ? value : null;
   const sourceModeRef = useRef(sourceMode);
   sourceModeRef.current = sourceMode;
@@ -142,7 +146,7 @@ export function RichTextEditor({
     typeof value === "string" ? value : (value as object | undefined);
 
   const editor = useEditor({
-    extensions: getBlogEditorExtensions(),
+    extensions: getBlogEditorExtensions({ flexibleListItems }),
     content: initialContent,
     immediatelyRender: false,
     onUpdate: ({ editor: ed }) => {
@@ -256,28 +260,56 @@ export function RichTextEditor({
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   }, [editor]);
 
+  const saveToolbarSelection = useCallback(() => {
+    if (!editor) return;
+    savedSelectionRef.current = {
+      from: editor.state.selection.from,
+      to: editor.state.selection.to,
+    };
+  }, [editor]);
+
+  const runToolbarCommand = useCallback(
+    (command: (chain: ReturnType<Editor["chain"]>) => ReturnType<Editor["chain"]>) => {
+      if (!editor) return;
+      const sel = savedSelectionRef.current;
+      let chain = editor.chain().focus();
+      if (sel) chain = chain.setTextSelection(sel);
+      command(chain).run();
+      savedSelectionRef.current = null;
+    },
+    [editor],
+  );
+
   if (!editor) return <div className="h-80 animate-pulse rounded-lg bg-stone-100" />;
 
   const tools = [
-    { icon: Bold, action: () => editor.chain().focus().toggleBold().run(), active: editor.isActive("bold") },
-    { icon: Italic, action: () => editor.chain().focus().toggleItalic().run(), active: editor.isActive("italic") },
+    { icon: Bold, run: () => runToolbarCommand((c) => c.toggleBold()), active: editor.isActive("bold") },
+    { icon: Italic, run: () => runToolbarCommand((c) => c.toggleItalic()), active: editor.isActive("italic") },
     {
       icon: UnderlineIcon,
-      action: () => editor.chain().focus().toggleUnderline().run(),
+      run: () => runToolbarCommand((c) => c.toggleUnderline()),
       active: editor.isActive("underline"),
     },
-    { icon: List, action: () => editor.chain().focus().toggleBulletList().run(), active: editor.isActive("bulletList") },
+    {
+      icon: List,
+      run: () => runToolbarCommand((c) => c.toggleBulletList()),
+      active: editor.isActive("bulletList"),
+    },
     {
       icon: ListOrdered,
-      action: () => editor.chain().focus().toggleOrderedList().run(),
+      run: () => runToolbarCommand((c) => c.toggleOrderedList()),
       active: editor.isActive("orderedList"),
     },
-    { icon: Quote, action: () => editor.chain().focus().toggleBlockquote().run(), active: editor.isActive("blockquote") },
-    { icon: TableIcon, action: insertTable, active: editor.isActive("table") },
-    { icon: Minus, action: () => editor.chain().focus().setHorizontalRule().run(), active: false },
-    { icon: Link2, action: setLink, active: editor.isActive("link") },
-    { icon: Undo, action: () => editor.chain().focus().undo().run(), active: false },
-    { icon: Redo, action: () => editor.chain().focus().redo().run(), active: false },
+    {
+      icon: Quote,
+      run: () => runToolbarCommand((c) => c.toggleBlockquote()),
+      active: editor.isActive("blockquote"),
+    },
+    { icon: TableIcon, run: insertTable, active: editor.isActive("table") },
+    { icon: Minus, run: () => runToolbarCommand((c) => c.setHorizontalRule()), active: false },
+    { icon: Link2, run: setLink, active: editor.isActive("link") },
+    { icon: Undo, run: () => editor.chain().focus().undo().run(), active: false },
+    { icon: Redo, run: () => editor.chain().focus().redo().run(), active: false },
   ];
 
   return (
@@ -286,7 +318,7 @@ export function RichTextEditor({
         <div className="sticky top-0 z-10 flex shrink-0 flex-wrap items-center gap-0.5 border-b border-stone-200 bg-stone-50/95 p-1.5 backdrop-blur-sm dark:border-stone-800 dark:bg-stone-950/95">
           <HeadingSelect editor={editor} />
           <div className="mx-0.5 h-6 w-px bg-stone-200" />
-          {tools.map(({ icon: Icon, action, active }, i) => (
+          {tools.map(({ icon: Icon, run, active }, i) => (
             <Button
               key={i}
               type="button"
@@ -294,8 +326,11 @@ export function RichTextEditor({
               size="icon"
               disabled={sourceMode}
               className={cn("h-8 w-8", active && "bg-stone-200 dark:bg-stone-800")}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={action}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                saveToolbarSelection();
+              }}
+              onClick={run}
             >
               <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
             </Button>
@@ -377,14 +412,20 @@ export function RichTextEditor({
             <EditorContent
               editor={editor}
               className={cn(
-                "[&_.tiptap]:prose [&_.tiptap]:prose-sm [&_.tiptap]:max-w-none [&_.tiptap]:min-h-[16rem]",
-                "[&_.tiptap]:px-4 [&_.tiptap]:py-3 [&_.tiptap]:outline-none dark:[&_.tiptap]:prose-invert",
+                "[&_.tiptap]:max-w-none [&_.tiptap]:min-h-[16rem]",
+                "[&_.tiptap]:px-4 [&_.tiptap]:py-3 [&_.tiptap]:outline-none",
                 "[&_.tiptap_h1]:text-2xl [&_.tiptap_h2]:text-xl [&_.tiptap_h3]:text-lg",
                 "[&_.tiptap_h4]:text-base [&_.tiptap_h5]:text-sm [&_.tiptap_h6]:text-sm",
+                "[&_.tiptap_p]:my-2 [&_.tiptap_p]:leading-relaxed",
+                "[&_.tiptap_ul]:my-2 [&_.tiptap_ul]:list-disc [&_.tiptap_ul]:pl-6",
+                "[&_.tiptap_ol]:my-2 [&_.tiptap_ol]:list-decimal [&_.tiptap_ol]:pl-6",
+                "[&_.tiptap_li]:my-1 [&_.tiptap_li]:leading-relaxed",
+                "[&_.tiptap_li_p]:my-0",
                 "[&_.tiptap_img]:max-w-full [&_.tiptap_img]:rounded-md",
                 "[&_.tiptap_table]:w-full [&_.tiptap_table]:border-collapse",
                 "[&_.tiptap_td]:border [&_.tiptap_td]:border-stone-300 [&_.tiptap_td]:px-2 [&_.tiptap_td]:py-1",
                 "[&_.tiptap_th]:border [&_.tiptap_th]:border-stone-300 [&_.tiptap_th]:bg-stone-100 [&_.tiptap_th]:px-2 [&_.tiptap_th]:py-1",
+                "[&_.tiptap_blockquote]:border-l-4 [&_.tiptap_blockquote]:border-stone-300 [&_.tiptap_blockquote]:pl-4 [&_.tiptap_blockquote]:italic",
               )}
             />
           )}

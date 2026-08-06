@@ -165,6 +165,7 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
             placeholder="Arabic regional content…"
             preserveHtml
             defaultSourceMode
+            flexibleListItems
           />
         </TabsContent>
 
@@ -188,6 +189,7 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
             placeholder="English regional content…"
             preserveHtml
             defaultSourceMode
+            flexibleListItems
           />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">

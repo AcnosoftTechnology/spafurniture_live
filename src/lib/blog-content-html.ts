@@ -16,7 +16,7 @@ export function blogContentToHtml(content: unknown): string {
   if (typeof content === "string") return content;
   if (isTipTapDoc(content)) {
     try {
-      return generateHTML(content, getBlogEditorExtensions());
+      return generateHTML(content, getBlogEditorExtensions({ flexibleListItems: true }));
     } catch {
       return "";
     }
