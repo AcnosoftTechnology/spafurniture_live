@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { cn, mediaUrl } from "@/lib/utils";
 import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
+import { WORDPRESS_IMPORT_ENABLED } from "@/lib/admin-feature-flags";
 
 const navItems = [
   { href: "/admin/dashboard/", label: "Dashboard", icon: LayoutDashboard },
@@ -50,7 +51,9 @@ const navItems = [
   { href: "/admin/inquiries/", label: "Inquiries", icon: MessageSquare },
   { href: "/admin/media/", label: "Media", icon: ImageIcon },
   { href: "/admin/seo-pages/", label: "Pages", icon: FileStack },
-  { href: "/admin/import/blog/", label: "WordPress Import", icon: Upload },
+  ...(WORDPRESS_IMPORT_ENABLED
+    ? [{ href: "/admin/import/blog/", label: "WordPress Import", icon: Upload } as const]
+    : []),
   { href: "/admin/migrations/", label: "Database", icon: Database },
   { href: "/admin/users/", label: "Users", icon: Users },
   { href: "/admin/activity/", label: "Activity", icon: Activity },

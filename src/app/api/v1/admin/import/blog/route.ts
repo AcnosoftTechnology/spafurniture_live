@@ -8,6 +8,7 @@ import {
   type BlogImportMapping,
 } from "@/lib/services/import.service";
 import { isWordPressExportXml } from "@/lib/services/wxr-parser.service";
+import { WORDPRESS_IMPORT_ENABLED } from "@/lib/admin-feature-flags";
 import { z } from "zod";
 
 const schema = z.object({
@@ -20,6 +21,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!WORDPRESS_IMPORT_ENABLED) {
+    return jsonError("FORBIDDEN", "WordPress Import is disabled.", 403);
+  }
+
   const { session, error } = await requireAdminSession();
   if (error || !session) return error;
 

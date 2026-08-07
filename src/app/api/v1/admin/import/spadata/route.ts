@@ -7,6 +7,7 @@ import {
   runSpadataImport,
   type SpadataImportStep,
 } from "@/lib/services/spadata-import.service";
+import { WORDPRESS_IMPORT_ENABLED } from "@/lib/admin-feature-flags";
 
 const schema = z.object({
   dryRun: z.boolean().default(true),
@@ -19,6 +20,10 @@ const schema = z.object({
 });
 
 export async function GET() {
+  if (!WORDPRESS_IMPORT_ENABLED) {
+    return jsonError("FORBIDDEN", "WordPress Import is disabled.", 403);
+  }
+
   const { error } = await requireAdminSession();
   if (error) return error;
 
@@ -27,6 +32,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!WORDPRESS_IMPORT_ENABLED) {
+    return jsonError("FORBIDDEN", "WordPress Import is disabled.", 403);
+  }
+
   const { session, error } = await requireAdminSession();
   if (error || !session) return error;
 
