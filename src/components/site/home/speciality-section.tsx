@@ -10,7 +10,7 @@ export function SpecialitySection({ data }: { data: HomepageContent["speciality"
     <section className="esth-speciality-section">
       <ParallaxSectionBg
         className="esth-speciality-bg"
-        imageUrl="/assets/images/speciality/bg-special.jpg"
+        imageUrl="/assets/images/speciality/bg-special.webp"
         parallaxScale={1}
         revealOffset={150}
         revealDistance={400}

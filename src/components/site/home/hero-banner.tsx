@@ -29,7 +29,7 @@ export function HeroBanner({
     >
       <ParallaxSectionBg
         className="esth-premium-banner-bg"
-        imageUrl="/assets/images/bg/perfection.png"
+        imageUrl="/assets/images/bg/perfection.webp"
         maxShift={variant === "regional" ? 0 : 165}
         strength={variant === "regional" ? 0 : undefined}
         parallaxScale={1}

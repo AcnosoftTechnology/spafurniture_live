@@ -18,7 +18,7 @@ export function HowWeDoSection({ data }: { data: HomepageContent["howWeDo"] }) {
     <section className="esth-client-section how-what" id="what-we-do">
       <ParallaxSectionBg
         className="esth-how-we-bg"
-        imageUrl="/assets/images/bg-wood.png"
+        imageUrl="/assets/images/bg-wood.webp"
         maxShift={220}
         strength={1.85}
       />
