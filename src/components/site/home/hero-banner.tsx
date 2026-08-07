@@ -25,6 +25,10 @@ function resolveHeroPaths(hero: HeroImageFields) {
   return { imagePath, mobileImagePath };
 }
 
+function isAnimatedGif(path: string) {
+  return /\.gif(\?|#|$)/i.test(path);
+}
+
 function buildOptimizedPicture(opts: {
   src: string;
   alt: string;
