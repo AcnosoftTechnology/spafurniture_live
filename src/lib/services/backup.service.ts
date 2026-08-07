@@ -70,7 +70,7 @@ function resolveUploadsDir() {
 
 async function countFilesRecursive(dir: string): Promise<number> {
   let count = 0;
-  let entries: Awaited<ReturnType<typeof fs.readdir>> = [];
+  let entries: import("node:fs").Dirent[] = [];
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
   } catch {
@@ -138,7 +138,9 @@ export async function getBackupEstimates() {
 
     async function sumBytes(dir: string): Promise<number> {
       let total = 0;
-      const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+      const entries = await fs.readdir(dir, { withFileTypes: true }).catch(
+        () => [] as import("node:fs").Dirent[],
+      );
       for (const entry of entries) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) total += await sumBytes(full);
@@ -299,7 +301,9 @@ export async function runBackupJob(
 
 async function listFilesRecursive(dir: string, base = dir): Promise<string[]> {
   const out: string[] = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(
+    () => [] as import("node:fs").Dirent[],
+  );
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
