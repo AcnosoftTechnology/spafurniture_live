@@ -1,12 +1,11 @@
 import "server-only";
 
-import { spawn } from "node:child_process";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomBytes } from "node:crypto";
-import { createReadStream } from "node:fs";
-import archiver from "archiver";
+import { spawn } from "node:child_process";
+import { ZipArchive } from "archiver";
 import { env } from "@/lib/env";
 import type { BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
 
@@ -85,26 +84,27 @@ async function countFilesRecursive(dir: string): Promise<number> {
   return count;
 }
 
-/** Prefer PG_DUMP_PATH; otherwise a fixed binary name (avoid dynamic spawn tracing). */
-function resolvePgDumpBin(): string {
-  const fromEnv = process.env.PG_DUMP_PATH?.trim();
-  if (fromEnv) return fromEnv;
-  return "pg_dump";
-}
-
 function runPgDump(outFile: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const bin = resolvePgDumpBin();
-    const child = spawn(
-      /* turbopackIgnore: true */ bin,
-      [env.DATABASE_URL, "--no-owner", "--no-acl", "--format=plain", `--file=${outFile}`],
-      {
-        env: process.env,
-        windowsHide: true,
-        shell: false,
-      },
-    );
+    const customBin = process.env.PG_DUMP_PATH?.trim();
+    // Literal "pg_dump" keeps Turbopack from tracing the whole filesystem.
+    const child = customBin
+      ? spawn(/* turbopackIgnore: true */ customBin, [
+          env.DATABASE_URL,
+          "--no-owner",
+          "--no-acl",
+          "--format=plain",
+          `--file=${outFile}`,
+        ], { env: process.env, windowsHide: true, shell: false })
+      : spawn("pg_dump", [
+          env.DATABASE_URL,
+          "--no-owner",
+          "--no-acl",
+          "--format=plain",
+          `--file=${outFile}`,
+        ], { env: process.env, windowsHide: true, shell: false });
 
+    const binLabel = customBin || "pg_dump";
     let stderr = "";
     child.stderr?.on("data", (chunk: Buffer) => {
       stderr += chunk.toString();
@@ -112,7 +112,7 @@ function runPgDump(outFile: string): Promise<void> {
     child.on("error", (err) => {
       reject(
         new Error(
-          `Could not run pg_dump (${bin}). Install PostgreSQL client tools or set PG_DUMP_PATH. ${err.message}`,
+          `Could not run pg_dump (${binLabel}). Install PostgreSQL client tools or set PG_DUMP_PATH. ${err.message}`,
         ),
       );
     });
@@ -334,7 +334,7 @@ async function createZipArchive(opts: {
 
   await new Promise<void>((resolve, reject) => {
     const output = createWriteStream(zipPath);
-    const archive = archiver("zip", { zlib: { level: 6 } });
+    const archive = new ZipArchive({ zlib: { level: 6 } });
 
     output.on("close", () => resolve());
     archive.on("error", (err) => reject(err));
