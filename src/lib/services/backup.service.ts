@@ -7,9 +7,30 @@ import { createHash, randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
 import { ZipArchive } from "archiver";
 import { env } from "@/lib/env";
-import type { BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
+import type { BackupJobListItem, BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
 
-export type { BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
+export type { BackupJobListItem, BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
+
+type BackupJobMeta = {
+  jobId: string;
+  filename: string;
+  createdAt: string;
+  includeDatabase: boolean;
+  includeUploads: boolean;
+  sizeBytes: number;
+  checksumSha256?: string;
+};
+
+function isValidJobId(jobId: string) {
+  return /^bk_[a-z0-9]+_[a-f0-9]+$/i.test(jobId);
+}
+
+function getRetentionMs() {
+  const daysRaw = process.env.BACKUP_RETENTION_DAYS?.trim();
+  const days = daysRaw ? Number(daysRaw) : 30;
+  if (!Number.isFinite(days) || days <= 0) return 30 * 24 * 60 * 60 * 1000;
+  return days * 24 * 60 * 60 * 1000;
+}
 
 function resolveProjectRoot() {
   // Keep Turbopack from tracing the whole project tree via process.cwd().
@@ -41,7 +62,7 @@ export function createBackupJobId() {
   return `bk_${Date.now().toString(36)}_${randomBytes(4).toString("hex")}`;
 }
 
-async function cleanupOldJobs(maxAgeMs = 24 * 60 * 60 * 1000) {
+async function cleanupOldJobs() {
   const root = getJobsRoot();
   let dirs: import("node:fs").Dirent[] = [];
   try {
@@ -50,12 +71,23 @@ async function cleanupOldJobs(maxAgeMs = 24 * 60 * 60 * 1000) {
     return;
   }
   const now = Date.now();
+  const completeMaxAge = getRetentionMs();
+  const incompleteMaxAge = 6 * 60 * 60 * 1000;
   for (const entry of dirs) {
-    if (!entry.isDirectory()) continue;
+    if (!entry.isDirectory() || !isValidJobId(entry.name)) continue;
     const dir = path.join(root, entry.name);
     try {
       const st = await fs.stat(dir);
-      if (now - st.mtimeMs > maxAgeMs) {
+      const metaPath = path.join(dir, "meta.json");
+      let hasMeta = false;
+      try {
+        await fs.access(metaPath);
+        hasMeta = true;
+      } catch {
+        hasMeta = false;
+      }
+      const maxAge = hasMeta ? completeMaxAge : incompleteMaxAge;
+      if (now - st.mtimeMs > maxAge) {
         await fs.rm(dir, { recursive: true, force: true });
       }
     } catch {
@@ -422,8 +454,58 @@ async function createZipArchive(opts: {
   });
 }
 
+export async function listBackupJobs(): Promise<BackupJobListItem[]> {
+  const root = getJobsRoot();
+  let dirs: import("node:fs").Dirent[] = [];
+  try {
+    dirs = await fs.readdir(root, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const jobs: BackupJobListItem[] = [];
+  for (const entry of dirs) {
+    if (!entry.isDirectory() || !isValidJobId(entry.name)) continue;
+    const dir = path.join(root, entry.name);
+    try {
+      const raw = await fs.readFile(path.join(dir, "meta.json"), "utf8");
+      const meta = JSON.parse(raw) as Partial<BackupJobMeta>;
+      if (!meta.filename || !meta.createdAt) continue;
+      const zipPath = path.join(dir, meta.filename);
+      const st = await fs.stat(zipPath).catch(() => null);
+      if (!st?.isFile()) continue;
+      jobs.push({
+        jobId: entry.name,
+        filename: meta.filename,
+        createdAt: meta.createdAt,
+        includeDatabase: Boolean(meta.includeDatabase),
+        includeUploads: Boolean(meta.includeUploads),
+        sizeBytes: typeof meta.sizeBytes === "number" ? meta.sizeBytes : st.size,
+        downloadPath: `/api/v1/admin/backup/${entry.name}/download`,
+      });
+    } catch {
+      // incomplete / corrupt job — skip from list
+    }
+  }
+
+  jobs.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  return jobs;
+}
+
+export async function deleteBackupJob(jobId: string): Promise<boolean> {
+  if (!isValidJobId(jobId)) return false;
+  const dir = jobDir(jobId);
+  try {
+    await fs.access(dir);
+  } catch {
+    return false;
+  }
+  await fs.rm(dir, { recursive: true, force: true });
+  return true;
+}
+
 export async function getBackupZipPath(jobId: string): Promise<{ zipPath: string; filename: string } | null> {
-  if (!/^bk_[a-z0-9]+_[a-f0-9]+$/i.test(jobId)) return null;
+  if (!isValidJobId(jobId)) return null;
   const dir = jobDir(jobId);
   const metaPath = path.join(dir, "meta.json");
   try {

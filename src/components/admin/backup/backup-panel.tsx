@@ -11,10 +11,11 @@ import {
   HardDrive,
   Loader2,
   Play,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminApiUrl } from "@/lib/utils";
-import type { BackupProgressEvent } from "@/lib/backup-types";
+import type { BackupJobListItem, BackupProgressEvent } from "@/lib/backup-types";
 
 type BackupEstimates = {
   webBackupEnabled: boolean;
@@ -23,6 +24,8 @@ type BackupEstimates = {
   uploadsFiles: number;
   uploadsBytes: number;
   databaseConfigured: boolean;
+  jobs?: BackupJobListItem[];
+  retentionDays?: number;
 };
 
 function formatBytes(bytes: number) {
@@ -37,12 +40,21 @@ function formatBytes(bytes: number) {
   return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+function formatWhen(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString();
+}
+
 export function BackupPanel() {
   const [info, setInfo] = useState<BackupEstimates | null>(null);
+  const [jobs, setJobs] = useState<BackupJobListItem[]>([]);
+  const [retentionDays, setRetentionDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [includeDatabase, setIncludeDatabase] = useState(true);
   const [includeUploads, setIncludeUploads] = useState(true);
   const [running, setRunning] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [percent, setPercent] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [currentFile, setCurrentFile] = useState<string | null>(null);
@@ -58,12 +70,18 @@ export function BackupPanel() {
     setLoading(true);
     try {
       const res = await fetch(adminApiUrl("/api/v1/admin/backup"));
-      const json = (await res.json()) as { data?: BackupEstimates; error?: { message?: string } };
+      const json = (await res.json()) as {
+        data?: BackupEstimates;
+        error?: { message?: string };
+      };
       if (!res.ok) {
         toast.error(json.error?.message ?? "Failed to load backup info");
         return;
       }
-      setInfo(json.data ?? null);
+      const data = json.data ?? null;
+      setInfo(data);
+      setJobs(data?.jobs ?? []);
+      setRetentionDays(data?.retentionDays ?? 30);
     } catch {
       toast.error("Failed to load backup info");
     } finally {
@@ -151,6 +169,7 @@ export function BackupPanel() {
               sizeBytes: event.sizeBytes,
             });
             toast.success("Backup ready to download");
+            void loadInfo();
           }
 
           if (event.type === "error") {
@@ -167,10 +186,31 @@ export function BackupPanel() {
     }
   }
 
-  function downloadBackup() {
-    if (!complete) return;
-    const href = adminApiUrl(complete.downloadPath);
+  function downloadJob(job: Pick<BackupJobListItem, "downloadPath">) {
+    const href = adminApiUrl(job.downloadPath);
     window.location.href = href.endsWith("/") ? href : `${href}/`;
+  }
+
+  async function removeJob(jobId: string) {
+    if (!window.confirm("Delete this backup from the server?")) return;
+    setDeletingId(jobId);
+    try {
+      const res = await fetch(adminApiUrl(`/api/v1/admin/backup/${jobId}`), {
+        method: "DELETE",
+      });
+      const json = (await res.json()) as { error?: { message?: string } };
+      if (!res.ok) {
+        toast.error(json.error?.message ?? "Failed to delete backup");
+        return;
+      }
+      toast.success("Backup deleted");
+      if (complete?.jobId === jobId) setComplete(null);
+      await loadInfo();
+    } catch {
+      toast.error("Failed to delete backup");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const canRun =
@@ -189,7 +229,8 @@ export function BackupPanel() {
             </h2>
             <p className="max-w-xl text-xs text-stone-500">
               WordPress-style backup: choose database and/or uploaded files, watch progress, then
-              download the ZIP when complete.
+              download anytime from the list below. Kept on server for {retentionDays} days
+              (override with <code>BACKUP_RETENTION_DAYS</code>).
             </p>
           </div>
           <Button type="button" size="sm" variant="outline" onClick={() => void loadInfo()} disabled={loading || running}>
@@ -328,7 +369,7 @@ export function BackupPanel() {
                   </p>
                 </div>
               </div>
-              <Button type="button" size="sm" onClick={downloadBackup}>
+              <Button type="button" size="sm" onClick={() => downloadJob(complete)}>
                 <Download className="mr-1.5 h-3.5 w-3.5" />
                 Download ZIP
               </Button>
@@ -336,6 +377,60 @@ export function BackupPanel() {
           ) : null}
         </div>
       )}
+
+      <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-950">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-stone-900">Saved backups</h3>
+          <span className="text-xs text-stone-500">
+            {loading ? "Loading…" : `${jobs.length} on server`}
+          </span>
+        </div>
+
+        {jobs.length === 0 && !loading ? (
+          <p className="rounded-lg border border-dashed border-stone-200 px-4 py-8 text-center text-xs text-stone-500">
+            No completed backups yet. Create one above — it will appear here for later download.
+          </p>
+        ) : (
+          <ul className="divide-y divide-stone-100 rounded-xl border border-stone-100">
+            {jobs.map((job) => (
+              <li
+                key={job.jobId}
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0 space-y-0.5">
+                  <p className="truncate text-sm font-medium text-stone-900">{job.filename}</p>
+                  <p className="text-xs text-stone-500">
+                    {formatWhen(job.createdAt)} · {formatBytes(job.sizeBytes)} ·{" "}
+                    {[job.includeDatabase ? "DB" : null, job.includeUploads ? "Files" : null]
+                      .filter(Boolean)
+                      .join(" + ")}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => downloadJob(job)}>
+                    <Download className="mr-1.5 h-3.5 w-3.5" />
+                    Download
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={deletingId === job.jobId}
+                    onClick={() => void removeJob(job.jobId)}
+                    aria-label="Delete backup"
+                  >
+                    {deletingId === job.jobId ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5 text-stone-500" />
+                    )}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

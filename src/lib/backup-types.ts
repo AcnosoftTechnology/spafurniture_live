@@ -16,3 +16,13 @@ export type BackupOptions = {
   includeDatabase: boolean;
   includeUploads: boolean;
 };
+
+export type BackupJobListItem = {
+  jobId: string;
+  filename: string;
+  createdAt: string;
+  includeDatabase: boolean;
+  includeUploads: boolean;
+  sizeBytes: number;
+  downloadPath: string;
+};
