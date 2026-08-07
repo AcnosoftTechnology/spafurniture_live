@@ -25,6 +25,13 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <SiteFontVariables>
+      <link
+        rel="preload"
+        href="/assets/fonts/josefin-sans-normal.woff2"
+        as="font"
+        type="font/woff2"
+        crossOrigin="anonymous"
+      />
       <SiteProviders>
         <SmoothScrollProvider>
           <div className="esth-site">

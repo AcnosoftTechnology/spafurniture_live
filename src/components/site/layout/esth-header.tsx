@@ -258,6 +258,7 @@ export function EsthHeader({
                   alt="Worldwide shipping"
                   width={180}
                   height={38}
+                  loading="lazy"
                   className="esth-header-shipping-img mx-auto h-auto w-full"
                   sizes="(max-width: 768px) 88px, 180px"
                 />

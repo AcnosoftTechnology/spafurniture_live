@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type Lenis from "lenis";
-import "lenis/dist/lenis.css";
 
 const LenisContext = createContext<Lenis | null>(null);
 
@@ -26,6 +25,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     let cancelled = false;
 
     const init = async () => {
+      await import("lenis/dist/lenis.css");
       const { default: LenisCtor } = await import("lenis");
       if (cancelled) return;
 

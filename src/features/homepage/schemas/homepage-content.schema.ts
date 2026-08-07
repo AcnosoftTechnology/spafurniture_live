@@ -69,7 +69,8 @@ export type HomepageContent = z.infer<typeof homepageContentSchema>;
 
 export const defaultHomepageContent: HomepageContent = {
   hero: {
-    imagePath: "/assets/images/bg/spa-main.png",
+    imagePath: "/assets/images/bg/spa-main.webp",
+    mobileImagePath: "/assets/images/bg/spa-main-mobile.webp",
     alt: "Spa bed",
   },
   backgroundText: {

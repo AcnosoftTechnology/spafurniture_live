@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic";
-import { HeroBanner } from "@/components/site/home/hero-banner";
+import { HeroBanner, HeroLcpPreloads } from "@/components/site/home/hero-banner";
 import { ProductsIntro } from "@/components/site/home/products-intro";
 import { ProductFeatureSection } from "@/components/site/home/product-feature-section";
 import { RegionalIntroSection } from "@/components/site/regional/regional-intro-section";
@@ -19,6 +19,7 @@ export function RegionalLandingView({
 }: RegionalPageData & { slug: string }) {
   return (
     <>
+      <HeroLcpPreloads hero={content.hero} />
       <HeroBanner
         hero={content.hero}
         sectionId={slug}
