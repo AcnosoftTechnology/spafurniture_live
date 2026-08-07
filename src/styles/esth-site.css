@@ -759,7 +759,8 @@ img{
   justify-content: center;
 }
 
-.esth-premium-image img{
+.esth-premium-image img,
+.esth-premium-image .esth-premium-hero-img{
   /*
   object-fit:contain;
   filter:drop-shadow(0 35px 30px #00000014);
@@ -771,6 +772,10 @@ img{
   animation:4s ease-in-out infinite esthFloatBed;
   */
   display:block;
+  width:100%;
+  max-width:100%;
+  height:auto;
+  object-fit:contain;
   vertical-align:middle;
   clear: both;
 }
@@ -1373,19 +1378,20 @@ img{
 }
 
 @media (max-width: 768px) {
-    .esth-premium-banner-inner {
-   position: relative;
-    left: -5px;
+  .esth-premium-banner-inner {
+    position: relative;
+    left: 0;
     box-sizing: border-box;
-    width: 420px;
-    max-width: 420px;
-    min-height: 78.1671vh;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
   }
 }
 
 
 @media (prefers-reduced-motion: reduce){
   .esth-premium-image img,
+  .esth-premium-image .esth-premium-hero-img,
   .esth-salon-image img{
     animation:none;
   }
@@ -3016,18 +3022,20 @@ object-fit: contain;
   }
   .esth-premium-image{
     width:100%;
-    height:auto;
+    height:100%;
     flex:1;
     min-height:0;
-    padding-inline:0;
+    padding-inline:12px;
     display:flex;
-    align-items:flex-end;
+    align-items:center;
     justify-content:center;
   }
-  .esth-premium-image img{
-    width:135%;
-    max-width:135%;
-    max-height:450px;
+  .esth-premium-image img,
+  .esth-premium-image .esth-premium-hero-img{
+    width:100%;
+    max-width:100%;
+    max-height:100%;
+    height:auto;
     margin-top:0 !important;
     margin-bottom:0;
     object-fit:contain;
@@ -7958,7 +7966,17 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 }
 
 @media (max-width:768px){
-.esth-premium-banner-shell{top: 35%!important;}
+/* Keep shell in-flow on mobile — absolute + % top caused large CLS after paint */
+.esth-premium-banner .esth-premium-banner-shell{
+  position:relative !important;
+  top:auto !important;
+  left:auto !important;
+  transform:none !important;
+  margin-top:0 !important;
+  height:100%;
+  display:flex;
+  align-items:stretch;
+}
 .detailShimmerThumbs{
   gap: 10px;
   margin-top: 12px;
@@ -8029,6 +8047,20 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
     transform: translateY(-50%);
     margin-top: 100px;
     left: 0px;
+}
+
+/* Home mobile: keep shell in document flow (must stay after absolute rule above) */
+@media (max-width: 768px) {
+  .esth-premium-banner .esth-premium-banner-shell {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin-top: 0 !important;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
 }
 
 /* Regional pages: override global banner shell positioning (must stay after rule above) */

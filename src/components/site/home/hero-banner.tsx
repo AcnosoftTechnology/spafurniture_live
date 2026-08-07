@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ParallaxSectionBg } from "@/components/site/home/parallax-section-bg";
 import { mediaUrl } from "@/lib/utils";
 import type { HomepageContent } from "@/features/homepage/schemas/homepage-content.schema";
@@ -28,7 +29,15 @@ export function HeroBanner({
       <div className=" esth-premium-banner-shell">
         <div className="esth-premium-banner-inner">
           <div className="esth-premium-image">
-            <img src={mediaUrl(hero.imagePath)} alt={hero.alt} />
+            <Image
+              src={mediaUrl(hero.imagePath)}
+              alt={hero.alt}
+              width={1400}
+              height={1050}
+              priority
+              sizes="100vw"
+              className="esth-premium-hero-img"
+            />
           </div>
           {caption ? <p className="esth-premium-caption">{caption}</p> : null}
         </div>
