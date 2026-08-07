@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import type { ContentStatus, Prisma } from "@prisma/client";
+import {
+  PRODUCT_EXPORT_FIELDS,
+  resolveExportFieldDefs,
+  type ProductExportFieldDef,
+} from "@/lib/product-export-fields";
 
 export type ProductExportFilters = {
   status?: ContentStatus;
   ids?: string[];
   search?: string;
+  /** Field keys from PRODUCT_EXPORT_FIELDS; omit = all */
+  fields?: string[];
 };
 
 function mediaRef(
@@ -92,7 +99,8 @@ function mapProduct(p: ProductExportRow) {
     })),
     categoryIds: p.categories.map((pc) => pc.category.id),
     categoryTitles: p.categories.map((pc) => pc.category.title),
-    primaryCategory: p.categories.find((pc) => pc.isPrimary)?.category ?? p.categories[0]?.category ?? null,
+    primaryCategory:
+      p.categories.find((pc) => pc.isPrimary)?.category ?? p.categories[0]?.category ?? null,
 
     gallery: p.gallery.map((g) => ({
       mediaId: g.mediaId,
@@ -152,6 +160,19 @@ function mapProduct(p: ProductExportRow) {
 
 export type ExportedProduct = ReturnType<typeof mapProduct>;
 
+function pickProductFields(
+  product: ExportedProduct,
+  defs: ProductExportFieldDef[],
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const def of defs) {
+    for (const key of def.jsonKeys) {
+      out[key] = product[key as keyof ExportedProduct];
+    }
+  }
+  return out;
+}
+
 export async function fetchProductsForExport(filters: ProductExportFilters = {}) {
   const where: Prisma.ProductWhereInput = {};
 
@@ -175,12 +196,25 @@ export async function fetchProductsForExport(filters: ProductExportFilters = {})
   return products.map(mapProduct);
 }
 
-export function buildProductExportJson(products: ExportedProduct[]) {
+export function buildProductExportJson(
+  products: ExportedProduct[],
+  fieldKeys?: string[],
+) {
+  const defs = resolveExportFieldDefs(fieldKeys);
+  const allKeys = new Set(PRODUCT_EXPORT_FIELDS.flatMap((f) => f.jsonKeys));
+  const selectedKeys = new Set(defs.flatMap((f) => f.jsonKeys));
+  const isFull = selectedKeys.size >= allKeys.size;
+
+  const rows = isFull
+    ? products
+    : products.map((p) => pickProductFields(p, defs));
+
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    count: products.length,
-    products,
+    count: rows.length,
+    fields: defs.map((d) => d.key),
+    products: rows,
   };
 }
 
@@ -196,107 +230,74 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
-/** Flat spreadsheet-friendly rows (fullDesc / schemaJson as JSON strings). */
-export function buildProductExportCsv(products: ExportedProduct[]): string {
-  const headers = [
-    "id",
-    "title",
-    "slug",
-    "status",
-    "featured",
-    "sortOrder",
-    "locale",
-    "publishedAt",
-    "createdAt",
-    "updatedAt",
-    "shortDesc",
-    "fullDesc",
-    "dimensions",
-    "priceDisplay",
-    "youtubeUrl",
-    "youtubeLabel",
-    "brochureExternalUrl",
-    "brochureExternalLabel",
-    "categoryIds",
-    "categoryTitles",
-    "primaryCategoryId",
-    "primaryCategoryTitle",
-    "galleryMediaIds",
-    "galleryPaths",
-    "dimensionsMediaId",
-    "dimensionsMediaPath",
-    "featuresMediaId",
-    "featuresMediaPath",
-    "brochureMediaId",
-    "brochureMediaPath",
-    "ogImageId",
-    "ogImagePath",
-    "features",
-    "attributes",
-    "relatedProductIds",
-    "relatedProductSlugs",
-    "seoTitle",
-    "metaDescription",
-    "keywords",
-    "canonicalUrl",
-    "robots",
-    "ogTitle",
-    "ogDescription",
-    "twitterCard",
-    "schemaJson",
-  ];
+type CsvGetter = (p: ExportedProduct) => unknown;
 
+const CSV_COLUMN_GETTERS: Record<string, CsvGetter> = {
+  id: (p) => p.id,
+  title: (p) => p.title,
+  slug: (p) => p.slug,
+  status: (p) => p.status,
+  featured: (p) => p.featured,
+  sortOrder: (p) => p.sortOrder,
+  locale: (p) => p.locale,
+  publishedAt: (p) => p.publishedAt,
+  createdAt: (p) => p.createdAt,
+  updatedAt: (p) => p.updatedAt,
+  shortDesc: (p) => p.shortDesc,
+  fullDesc: (p) => p.fullDesc,
+  dimensions: (p) => p.dimensions,
+  priceDisplay: (p) => p.priceDisplay,
+  youtubeUrl: (p) => p.youtubeUrl,
+  youtubeLabel: (p) => p.youtubeLabel,
+  brochureExternalUrl: (p) => p.brochureExternalUrl,
+  brochureExternalLabel: (p) => p.brochureExternalLabel,
+  hreflangGroupId: (p) => p.hreflangGroupId,
+  categoryIds: (p) => p.categoryIds.join("|"),
+  categoryTitles: (p) => p.categoryTitles.join("|"),
+  primaryCategoryId: (p) => p.primaryCategory?.id ?? "",
+  primaryCategoryTitle: (p) => p.primaryCategory?.title ?? "",
+  galleryMediaIds: (p) => p.gallery.map((g) => g.mediaId).join("|"),
+  galleryPaths: (p) => p.gallery.map((g) => g.path).join("|"),
+  dimensionsMediaId: (p) => p.dimensionsMedia?.mediaId ?? "",
+  dimensionsMediaPath: (p) => p.dimensionsMedia?.path ?? "",
+  featuresMediaId: (p) => p.featuresMedia?.mediaId ?? "",
+  featuresMediaPath: (p) => p.featuresMedia?.path ?? "",
+  brochureMediaId: (p) => p.brochureMedia?.mediaId ?? "",
+  brochureMediaPath: (p) => p.brochureMedia?.path ?? "",
+  ogImageId: (p) => p.ogImage?.mediaId ?? "",
+  ogImagePath: (p) => p.ogImage?.path ?? "",
+  features: (p) => p.features,
+  attributes: (p) => p.attributes,
+  sections: (p) => p.sections,
+  tabs: (p) => p.tabs,
+  relatedProductIds: (p) => p.relatedProducts.map((r) => r.id).join("|"),
+  relatedProductSlugs: (p) => p.relatedProducts.map((r) => r.slug).join("|"),
+  seoTitle: (p) => p.seo.seoTitle,
+  metaDescription: (p) => p.seo.metaDescription,
+  keywords: (p) => p.seo.keywords.join("|"),
+  canonicalUrl: (p) => p.seo.canonicalUrl,
+  robots: (p) => p.seo.robots,
+  ogTitle: (p) => p.seo.ogTitle,
+  ogDescription: (p) => p.seo.ogDescription,
+  twitterCard: (p) => p.seo.twitterCard,
+  schemaJson: (p) => p.seo.schemaJson,
+};
+
+/** Flat spreadsheet-friendly rows; columns follow selected fields. */
+export function buildProductExportCsv(
+  products: ExportedProduct[],
+  fieldKeys?: string[],
+): string {
+  const defs = resolveExportFieldDefs(fieldKeys);
+  const headers = defs.flatMap((d) => d.csvColumns);
   const lines = [headers.join(",")];
 
   for (const p of products) {
-    const row = [
-      p.id,
-      p.title,
-      p.slug,
-      p.status,
-      p.featured,
-      p.sortOrder,
-      p.locale,
-      p.publishedAt,
-      p.createdAt,
-      p.updatedAt,
-      p.shortDesc,
-      p.fullDesc,
-      p.dimensions,
-      p.priceDisplay,
-      p.youtubeUrl,
-      p.youtubeLabel,
-      p.brochureExternalUrl,
-      p.brochureExternalLabel,
-      p.categoryIds.join("|"),
-      p.categoryTitles.join("|"),
-      p.primaryCategory?.id ?? "",
-      p.primaryCategory?.title ?? "",
-      p.gallery.map((g) => g.mediaId).join("|"),
-      p.gallery.map((g) => g.path).join("|"),
-      p.dimensionsMedia?.mediaId ?? "",
-      p.dimensionsMedia?.path ?? "",
-      p.featuresMedia?.mediaId ?? "",
-      p.featuresMedia?.path ?? "",
-      p.brochureMedia?.mediaId ?? "",
-      p.brochureMedia?.path ?? "",
-      p.ogImage?.mediaId ?? "",
-      p.ogImage?.path ?? "",
-      p.features,
-      p.attributes,
-      p.relatedProducts.map((r) => r.id).join("|"),
-      p.relatedProducts.map((r) => r.slug).join("|"),
-      p.seo.seoTitle,
-      p.seo.metaDescription,
-      p.seo.keywords.join("|"),
-      p.seo.canonicalUrl,
-      p.seo.robots,
-      p.seo.ogTitle,
-      p.seo.ogDescription,
-      p.seo.twitterCard,
-      p.seo.schemaJson,
-    ];
-    lines.push(row.map(csvEscape).join(","));
+    const row = headers.map((col) => {
+      const getter = CSV_COLUMN_GETTERS[col];
+      return csvEscape(getter ? getter(p) : "");
+    });
+    lines.push(row.join(","));
   }
 
   return `\uFEFF${lines.join("\n")}`;

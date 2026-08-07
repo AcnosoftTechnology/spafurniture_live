@@ -1,11 +1,24 @@
 import { requireAdminSession, jsonError } from "@/lib/api-response";
 import { toErrorResponse } from "@/lib/errors";
+import { PRODUCT_EXPORT_FIELD_KEYS } from "@/lib/product-export-fields";
 import {
   buildProductExportCsv,
   buildProductExportJson,
   fetchProductsForExport,
 } from "@/lib/services/product-export.service";
 import type { ContentStatus } from "@prisma/client";
+
+function parseFields(raw: string | null): string[] | undefined {
+  if (!raw?.trim()) return undefined;
+  const keys = raw
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+  if (!keys.length) return undefined;
+  const allowed = new Set(PRODUCT_EXPORT_FIELD_KEYS);
+  const valid = keys.filter((k) => allowed.has(k));
+  return valid.length ? valid : undefined;
+}
 
 export async function GET(request: Request) {
   try {
@@ -33,12 +46,17 @@ export async function GET(request: Request) {
       : undefined;
 
     const search = searchParams.get("search") ?? undefined;
+    const fields = parseFields(searchParams.get("fields"));
+
+    if (searchParams.has("fields") && !fields?.length) {
+      return jsonError("VALIDATION_ERROR", "Select at least one valid export field.", 400);
+    }
 
     const products = await fetchProductsForExport({ status, ids, search });
     const stamp = new Date().toISOString().slice(0, 10);
 
     if (format === "csv") {
-      const csv = buildProductExportCsv(products);
+      const csv = buildProductExportCsv(products, fields);
       return new Response(csv, {
         status: 200,
         headers: {
@@ -49,7 +67,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const payload = buildProductExportJson(products);
+    const payload = buildProductExportJson(products, fields);
     return new Response(JSON.stringify(payload, null, 2), {
       status: 200,
       headers: {
