@@ -15,6 +15,8 @@ export const regionalPageContentSchema = z.object({
     alt: z.string().default("Spa furniture"),
     caption: z.string().optional(),
     mediaId: z.string().nullable().optional(),
+    mobileImagePath: z.string().optional(),
+    mobileMediaId: z.string().nullable().optional(),
   }),
   intro: regionalIntroSchema,
   productsIntro: z.object({

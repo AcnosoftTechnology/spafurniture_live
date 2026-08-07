@@ -289,7 +289,7 @@ export function HomepageEditor({ initialData }: { initialData: AdminHomepageEdit
 
         <TabsContent value="hero" className="mt-4 space-y-4 rounded-xl border border-stone-200 bg-white p-4">
           <MediaField
-            label="Hero image"
+            label="Hero image (desktop)"
             value={pathToMedia(content.hero.imagePath, content.hero.mediaId, content.hero.alt)}
             onChange={(media) =>
               setContent({
@@ -304,6 +304,29 @@ export function HomepageEditor({ initialData }: { initialData: AdminHomepageEdit
             }
             previewClassName="h-40 w-full max-w-md"
           />
+          <MediaField
+            label="Hero image (mobile)"
+            value={pathToMedia(
+              content.hero.mobileImagePath ?? "",
+              content.hero.mobileMediaId,
+              content.hero.alt,
+            )}
+            onChange={(media) =>
+              setContent({
+                ...content,
+                hero: {
+                  ...content.hero,
+                  mobileImagePath: media?.path || undefined,
+                  mobileMediaId: media?.mediaId ?? null,
+                },
+              })
+            }
+            previewClassName="h-48 w-full max-w-xs"
+          />
+          <p className="text-xs text-stone-500">
+            Mobile image is optional. Upload a taller / larger crop for phones (≤768px). If empty, desktop
+            image is used.
+          </p>
           <div className="space-y-2">
             <Label>Alt text</Label>
             <Input

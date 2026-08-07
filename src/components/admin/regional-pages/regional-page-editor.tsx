@@ -101,7 +101,7 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
 
         <TabsContent value="banner" className="mt-4 space-y-4 rounded-xl border border-stone-200 bg-white p-4">
           <MediaField
-            label="Banner image / GIF"
+            label="Banner image / GIF (desktop)"
             value={
               content.hero.imagePath
                 ? {
@@ -122,6 +122,31 @@ export function RegionalPageEditor({ initialData }: { initialData: AdminRegional
             }
             previewClassName="h-48 w-full max-w-xl"
           />
+          <MediaField
+            label="Banner image (mobile)"
+            value={
+              content.hero.mobileImagePath
+                ? {
+                    path: content.hero.mobileImagePath,
+                    mediaId: content.hero.mobileMediaId ?? null,
+                  }
+                : null
+            }
+            onChange={(media) =>
+              setContent({
+                ...content,
+                hero: {
+                  ...content.hero,
+                  mobileImagePath: media?.path || undefined,
+                  mobileMediaId: media?.mediaId ?? null,
+                },
+              })
+            }
+            previewClassName="h-48 w-full max-w-xs"
+          />
+          <p className="text-xs text-stone-500">
+            Optional. Use a larger / taller crop for phones. Falls back to desktop image if empty.
+          </p>
           <div className="space-y-2">
             <Label>Image alt text</Label>
             <Input

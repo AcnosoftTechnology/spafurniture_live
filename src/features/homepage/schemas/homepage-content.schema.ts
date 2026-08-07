@@ -11,6 +11,9 @@ export const homepageContentSchema = z.object({
     imagePath: z.string(),
     alt: z.string().default("Spa furniture"),
     mediaId: z.string().nullable().optional(),
+    /** Optional mobile-only hero (falls back to imagePath). */
+    mobileImagePath: z.string().optional(),
+    mobileMediaId: z.string().nullable().optional(),
   }),
   backgroundText: z.object({
     text: z.string(),
