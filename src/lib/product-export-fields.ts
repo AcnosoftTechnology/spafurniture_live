@@ -23,6 +23,13 @@ export const PRODUCT_EXPORT_FIELDS: ProductExportFieldDef[] = [
   { key: "id", label: "ID", group: "Identity", jsonKeys: ["id"], csvColumns: ["id"] },
   { key: "title", label: "Title", group: "Identity", jsonKeys: ["title"], csvColumns: ["title"] },
   { key: "slug", label: "Slug", group: "Identity", jsonKeys: ["slug"], csvColumns: ["slug"] },
+  {
+    key: "url",
+    label: "Live URL",
+    group: "Identity",
+    jsonKeys: ["url"],
+    csvColumns: ["url"],
+  },
   { key: "status", label: "Status", group: "Identity", jsonKeys: ["status"], csvColumns: ["status"] },
   {
     key: "featured",

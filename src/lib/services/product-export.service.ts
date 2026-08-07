@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ContentStatus, Prisma } from "@prisma/client";
+import { productCanonicalUrl } from "@/lib/paths";
 import {
   PRODUCT_EXPORT_FIELDS,
   resolveExportFieldDefs,
@@ -73,6 +74,7 @@ function mapProduct(p: ProductExportRow) {
     id: p.id,
     title: p.title,
     slug: p.slug,
+    url: productCanonicalUrl(p.slug),
     status: p.status,
     featured: p.featured,
     sortOrder: p.sortOrder,
@@ -236,6 +238,7 @@ const CSV_COLUMN_GETTERS: Record<string, CsvGetter> = {
   id: (p) => p.id,
   title: (p) => p.title,
   slug: (p) => p.slug,
+  url: (p) => p.url,
   status: (p) => p.status,
   featured: (p) => p.featured,
   sortOrder: (p) => p.sortOrder,
