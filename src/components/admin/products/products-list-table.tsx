@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download, FileJson, FileSpreadsheet, Loader2 } from "lucide-react";
 import {
   DataTable,
   DataTableBody,
@@ -37,6 +37,7 @@ export function ProductsListTable() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState<"json" | "csv" | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,6 +115,52 @@ export function ProductsListTable() {
     await load();
   }
 
+  async function exportProducts(format: "json" | "csv") {
+    setExporting(format);
+    try {
+      const params = new URLSearchParams({ format });
+      if (search) params.set("search", search);
+      if (selected.size > 0) params.set("ids", [...selected].join(","));
+
+      const res = await fetch(adminApiUrl(`/api/v1/admin/products/export?${params}`));
+      if (!res.ok) {
+        let message = "Export failed";
+        try {
+          const json = (await res.json()) as { error?: { message?: string } };
+          if (json.error?.message) message = json.error.message;
+        } catch {
+          /* ignore */
+        }
+        toast.error(message);
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="?([^"]+)"?/i);
+      const filename =
+        match?.[1] ??
+        `products-export-${new Date().toISOString().slice(0, 10)}.${format}`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast.success(
+        selected.size > 0
+          ? `Exported ${selected.size} selected product(s) as ${format.toUpperCase()}`
+          : `Exported products as ${format.toUpperCase()}`,
+      );
+    } finally {
+      setExporting(null);
+    }
+  }
+
   const allSelected = items.length > 0 && items.every((p) => selected.has(p.id));
 
   return (
@@ -137,12 +184,54 @@ export function ProductsListTable() {
             Search
           </Button>
         </form>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={!!exporting || deleting}
+          onClick={() => exportProducts("json")}
+          title={
+            selected.size > 0
+              ? `Export ${selected.size} selected products (full JSON)`
+              : search
+                ? "Export search results (full JSON)"
+                : "Export all products (full JSON)"
+          }
+        >
+          {exporting === "json" ? (
+            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <FileJson className="mr-1 h-3.5 w-3.5" />
+          )}
+          Export JSON
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={!!exporting || deleting}
+          onClick={() => exportProducts("csv")}
+          title={
+            selected.size > 0
+              ? `Export ${selected.size} selected products (CSV)`
+              : search
+                ? "Export search results (CSV)"
+                : "Export all products (CSV)"
+          }
+        >
+          {exporting === "csv" ? (
+            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="mr-1 h-3.5 w-3.5" />
+          )}
+          Export CSV
+        </Button>
         {selected.size > 0 && (
           <Button
             type="button"
             size="sm"
             variant="destructive"
-            disabled={deleting}
+            disabled={deleting || !!exporting}
             onClick={bulkDelete}
           >
             <Trash2 className="mr-1 h-3.5 w-3.5" />
@@ -150,6 +239,16 @@ export function ProductsListTable() {
           </Button>
         )}
       </div>
+      <p className="text-[11px] text-stone-500">
+        <Download className="mr-1 inline h-3 w-3" />
+        Export includes categories (id + name), SEO meta, gallery, features, attributes, and related
+        products.
+        {selected.size > 0
+          ? ` Currently exporting ${selected.size} selected row(s).`
+          : search
+            ? " Currently limited to the active search filter."
+            : " Exports the full catalog when nothing is selected."}
+      </p>
 
       <DataTable>
         <table className="w-full">
