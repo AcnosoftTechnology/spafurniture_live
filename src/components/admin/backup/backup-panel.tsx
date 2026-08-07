@@ -115,6 +115,9 @@ export function BackupPanel() {
     setStage("prepare");
     pushLog("Starting backup…");
 
+    let sawComplete = false;
+    let sawError = false;
+
     try {
       const res = await fetch(adminApiUrl("/api/v1/admin/backup/create"), {
         method: "POST",
@@ -162,6 +165,7 @@ export function BackupPanel() {
           if (event.message) pushLog(event.message);
 
           if (event.type === "complete" && event.jobId && event.filename && event.downloadPath) {
+            sawComplete = true;
             setComplete({
               jobId: event.jobId,
               filename: event.filename,
@@ -173,13 +177,25 @@ export function BackupPanel() {
           }
 
           if (event.type === "error") {
+            sawError = true;
             toast.error(event.message);
           }
         }
       }
-    } catch {
-      toast.error("Backup failed");
-      pushLog("Backup failed");
+
+      if (!sawComplete && !sawError) {
+        const msg =
+          "Connection closed before backup finished. Often caused by proxy timeout or low disk space — check free disk (need ~uploads size) and nginx/proxy timeouts.";
+        toast.error(msg);
+        pushLog(msg);
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : "Backup failed (network/proxy closed the connection).";
+      toast.error(msg);
+      pushLog(msg);
     } finally {
       setRunning(false);
       setCurrentFile(null);

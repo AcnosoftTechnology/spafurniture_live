@@ -198,6 +198,46 @@ export async function getBackupEstimates() {
   };
 }
 
+function formatBackupError(err: unknown): string {
+  if (!(err instanceof Error)) return "Backup failed";
+  const code =
+    err && typeof err === "object" && "code" in err
+      ? String((err as NodeJS.ErrnoException).code)
+      : "";
+  if (code === "ENOSPC") {
+    return "Disk full while writing ZIP. Free space on the server (need roughly the size of uploads), then retry.";
+  }
+  if (code === "EMFILE" || code === "ENFILE") {
+    return "Too many open files while packing uploads. Retry, or raise the server file-descriptor limit.";
+  }
+  return code ? `${err.message} (${code})` : err.message || "Backup failed";
+}
+
+async function assertEnoughDiskSpace(dir: string, neededBytes: number) {
+  try {
+    const stats = await fs.statfs(dir);
+    const free = Number(stats.bavail) * Number(stats.bsize);
+    // ZIP of media is often ~same size (store) — require 1.15x headroom
+    const need = Math.ceil(neededBytes * 1.15);
+    if (free < need) {
+      throw Object.assign(
+        new Error(
+          `Not enough free disk space for backup. Free ~${Math.ceil(need / (1024 * 1024 * 1024))} GB, have ~${(
+            free /
+            (1024 * 1024 * 1024)
+          ).toFixed(1)} GB.`,
+        ),
+        { code: "ENOSPC" },
+      );
+    }
+  } catch (err) {
+    if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "ENOSPC") {
+      throw err;
+    }
+    // statfs unsupported — continue
+  }
+}
+
 export async function runBackupJob(
   options: BackupOptions,
   emit: Emit,
@@ -250,6 +290,7 @@ export async function runBackupJob(
 
     const uploadsDir = resolveUploadsDir();
     let uploadFileList: string[] = [];
+    let uploadsBytes = 0;
     if (options.includeUploads) {
       emit({
         type: "progress",
@@ -260,7 +301,9 @@ export async function runBackupJob(
       });
       try {
         await fs.access(uploadsDir);
-        uploadFileList = await listFilesRecursive(uploadsDir);
+        const listed = await listFilesRecursive(uploadsDir);
+        uploadFileList = listed.files;
+        uploadsBytes = listed.bytes;
       } catch {
         emit({
           type: "progress",
@@ -272,10 +315,17 @@ export async function runBackupJob(
       }
     }
 
+    let sqlBytes = 0;
+    if (options.includeDatabase) {
+      const st = await fs.stat(path.join(dir, "database.sql")).catch(() => null);
+      if (st) sqlBytes = st.size;
+    }
+    await assertEnoughDiskSpace(dir, uploadsBytes + sqlBytes);
+
     emit({
       type: "progress",
       stage: "zip",
-      message: "Creating ZIP archive…",
+      message: `Creating ZIP (${uploadFileList.length.toLocaleString()} files)…`,
       percent: 42,
       jobId,
     });
@@ -291,11 +341,32 @@ export async function runBackupJob(
       endPercent: 96,
     });
 
+    emit({
+      type: "progress",
+      stage: "zip",
+      message: "ZIP written — finishing…",
+      percent: 97,
+      jobId,
+    });
+
     const st = await fs.stat(zipPath);
 
     // Remove staging SQL (keep zip only)
     for (const file of staging) {
       await fs.rm(file, { force: true }).catch(() => undefined);
+    }
+
+    // Skip hashing multi-GB zips (can take many minutes and look like a hang).
+    let checksumSha256: string | null = null;
+    if (st.size <= 200 * 1024 * 1024) {
+      emit({
+        type: "progress",
+        stage: "done",
+        message: "Computing checksum…",
+        percent: 98,
+        jobId,
+      });
+      checksumSha256 = await sha256File(zipPath);
     }
 
     await fs.writeFile(
@@ -308,7 +379,7 @@ export async function runBackupJob(
           includeDatabase: options.includeDatabase,
           includeUploads: options.includeUploads,
           sizeBytes: st.size,
-          checksumSha256: await sha256File(zipPath),
+          checksumSha256,
         },
         null,
         2,
@@ -327,24 +398,32 @@ export async function runBackupJob(
     return { jobId, filename, zipPath, sizeBytes: st.size };
   } catch (err) {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => undefined);
-    throw err;
+    throw Object.assign(new Error(formatBackupError(err)), err instanceof Error ? { cause: err } : {});
   }
 }
 
-async function listFilesRecursive(dir: string, base = dir): Promise<string[]> {
+async function listFilesRecursive(
+  dir: string,
+  base = dir,
+): Promise<{ files: string[]; bytes: number }> {
   const out: string[] = [];
+  let bytes = 0;
   const entries = await fs.readdir(dir, { withFileTypes: true }).catch(
     () => [] as import("node:fs").Dirent[],
   );
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      out.push(...(await listFilesRecursive(full, base)));
+      const nested = await listFilesRecursive(full, base);
+      out.push(...nested.files);
+      bytes += nested.bytes;
     } else if (entry.isFile()) {
       out.push(path.relative(base, full));
+      const st = await fs.stat(full).catch(() => null);
+      if (st) bytes += st.size;
     }
   }
-  return out;
+  return { files: out, bytes };
 }
 
 async function sha256File(filePath: string) {
@@ -369,69 +448,106 @@ async function createZipArchive(opts: {
   const { zipPath, sqlPath, uploadsDir, uploadFiles, emit, jobId, basePercent, endPercent } = opts;
 
   await new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const fail = (err: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearInterval(heartbeat);
+      reject(err instanceof Error ? err : new Error(String(err)));
+    };
+    const ok = () => {
+      if (settled) return;
+      settled = true;
+      clearInterval(heartbeat);
+      resolve();
+    };
+
     const output = createWriteStream(zipPath);
-    const archive = new ZipArchive({ zlib: { level: 6 } });
+    // store:true — media is already compressed; much faster / less CPU for multi-GB uploads
+    const archive = new ZipArchive({ store: true, forceZip64: true });
 
-    output.on("close", () => resolve());
-    archive.on("error", (err) => reject(err));
-    archive.pipe(output);
+    const totalEntries = (sqlPath ? 1 : 0) + uploadFiles.length + 1; // + manifest
+    let entriesDone = 0;
+    let lastEmitAt = 0;
+    let lastPercent = basePercent;
 
-    const totalSteps = (sqlPath ? 1 : 0) + uploadFiles.length;
-    let done = 0;
-
-    const bump = (file?: string) => {
-      done += 1;
-      const span = endPercent - basePercent;
-      const percent =
-        totalSteps === 0
-          ? endPercent
-          : Math.min(endPercent, Math.round(basePercent + (done / totalSteps) * span));
+    const emitWriteProgress = (force = false) => {
+      const now = Date.now();
+      if (!force && now - lastEmitAt < 750) return;
+      lastEmitAt = now;
+      const ratio = entriesDone / Math.max(totalEntries, 1);
+      const percent = Math.min(
+        endPercent,
+        Math.round(basePercent + ratio * (endPercent - basePercent)),
+      );
+      lastPercent = percent;
       emit({
         type: "progress",
         stage: "zip",
-        message: file ? `Added ${file}` : "Packaging…",
+        message: `Writing ZIP (${entriesDone}/${totalEntries} entries)…`,
         percent,
-        current: done,
-        total: Math.max(totalSteps, 1),
-        file,
+        current: entriesDone,
+        total: totalEntries,
         jobId,
       });
     };
 
+    // Keep the NDJSON stream alive so nginx/proxy idle timeouts don't kill the request
+    const heartbeat = setInterval(() => {
+      emit({
+        type: "progress",
+        stage: "zip",
+        message: `Writing ZIP… still working (${entriesDone}/${totalEntries})`,
+        percent: lastPercent,
+        current: entriesDone,
+        total: totalEntries,
+        jobId,
+      });
+    }, 8000);
+
+    output.on("close", () => ok());
+    output.on("error", (err) => fail(err));
+    archive.on("error", (err) => fail(err));
+    archive.on("warning", (err) => {
+      // Missing files etc. — log but continue unless fatal
+      if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "ENOENT") {
+        emit({
+          type: "progress",
+          stage: "zip",
+          message: `Skipped missing file: ${(err as Error).message}`,
+          percent: lastPercent,
+          jobId,
+        });
+        return;
+      }
+      fail(err);
+    });
+    archive.on("entry", () => {
+      entriesDone += 1;
+      emitWriteProgress();
+    });
+    archive.pipe(output);
+
+    emit({
+      type: "progress",
+      stage: "zip",
+      message: "Queuing files into archive…",
+      percent: basePercent,
+      jobId,
+    });
+
     if (sqlPath) {
       archive.file(sqlPath, { name: "database.sql" });
-      bump("database.sql");
     }
 
     if (uploadsDir && uploadFiles.length) {
-      let lastEmittedPercent = -1;
-      for (let i = 0; i < uploadFiles.length; i++) {
-        const rel = uploadFiles[i]!;
+      for (const rel of uploadFiles) {
         const abs = path.join(uploadsDir, rel);
-        archive.file(abs, { name: path.posix.join("uploads", rel.split(path.sep).join("/")) });
-        done += 1;
-        const span = endPercent - basePercent;
-        const percent = Math.min(
-          endPercent,
-          Math.round(basePercent + (done / Math.max(totalSteps, 1)) * span),
-        );
-        // Throttle UI events for large libraries
-        if (percent !== lastEmittedPercent || i === uploadFiles.length - 1 || i % 25 === 0) {
-          lastEmittedPercent = percent;
-          emit({
-            type: "progress",
-            stage: "zip",
-            message: `Packing uploads (${done}/${uploadFiles.length})`,
-            percent,
-            current: done,
-            total: Math.max(totalSteps, 1),
-            file: rel,
-            jobId,
-          });
-        }
+        archive.file(abs, {
+          name: path.posix.join("uploads", rel.split(path.sep).join("/")),
+        });
       }
     } else if (uploadsDir) {
-      // empty uploads dir marker
       archive.append("", { name: "uploads/.keep" });
     }
 
@@ -449,6 +565,14 @@ async function createZipArchive(opts: {
       ),
       { name: "backup-manifest.json" },
     );
+
+    emit({
+      type: "progress",
+      stage: "zip",
+      message: "Finalizing ZIP (writing file data — this can take several minutes)…",
+      percent: Math.max(basePercent + 1, lastPercent),
+      jobId,
+    });
 
     void archive.finalize();
   });

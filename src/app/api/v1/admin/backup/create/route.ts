@@ -9,7 +9,7 @@ import { z } from "zod";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 600;
+export const maxDuration = 1800;
 
 const schema = z.object({
   includeDatabase: z.boolean().default(true),
