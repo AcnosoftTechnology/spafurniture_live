@@ -27,6 +27,7 @@ import {
   Globe,
   MapPin,
   Database,
+  HardDrive,
 } from "lucide-react";
 import { cn, mediaUrl } from "@/lib/utils";
 import type { PublicSiteConfig } from "@/features/settings/get-settings-data";
@@ -55,6 +56,7 @@ const navItems = [
     ? [{ href: "/admin/import/blog/", label: "WordPress Import", icon: Upload } as const]
     : []),
   { href: "/admin/migrations/", label: "Database", icon: Database },
+  { href: "/admin/backup/", label: "Backup", icon: HardDrive },
   { href: "/admin/users/", label: "Users", icon: Users },
   { href: "/admin/activity/", label: "Activity", icon: Activity },
   { href: "/admin/settings/", label: "Settings", icon: Settings },
