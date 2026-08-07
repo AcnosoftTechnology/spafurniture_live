@@ -83,7 +83,7 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   /** Auth.js calls /api/auth/session (no slash); avoid 308 → HTML parse errors in the client. */
   skipTrailingSlashRedirect: true,
-  serverExternalPackages: ["sanitize-html"],
+  serverExternalPackages: ["sanitize-html", "archiver"],
   /** Default 1MB blocks large uploads via Server Actions (media allows up to 50MB). */
   experimental: {
     serverActions: {

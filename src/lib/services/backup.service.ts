@@ -13,10 +13,11 @@ import type { BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
 export type { BackupOptions, BackupProgressEvent } from "@/lib/backup-types";
 
 function resolveProjectRoot() {
-  const cwd = process.cwd();
+  // Keep Turbopack from tracing the whole project tree via process.cwd().
+  const cwd = /* turbopackIgnore: true */ process.cwd();
   const standaloneSuffix = `${path.sep}.next${path.sep}standalone`;
   if (cwd.endsWith(standaloneSuffix)) {
-    return path.resolve(cwd, "..", "..");
+    return path.resolve(/* turbopackIgnore: true */ cwd, "..", "..");
   }
   return cwd;
 }
@@ -65,7 +66,7 @@ async function cleanupOldJobs(maxAgeMs = 24 * 60 * 60 * 1000) {
 }
 
 function resolveUploadsDir() {
-  return path.resolve(env.UPLOAD_DIR);
+  return path.resolve(/* turbopackIgnore: true */ env.UPLOAD_DIR);
 }
 
 async function countFilesRecursive(dir: string): Promise<number> {
@@ -84,27 +85,23 @@ async function countFilesRecursive(dir: string): Promise<number> {
   return count;
 }
 
-async function resolvePgDump(): Promise<string> {
-  if (process.env.PG_DUMP_PATH) {
-    try {
-      await fs.access(process.env.PG_DUMP_PATH);
-      return process.env.PG_DUMP_PATH;
-    } catch {
-      // fall through
-    }
-  }
-  return process.platform === "win32" ? "pg_dump.exe" : "pg_dump";
+/** Prefer PG_DUMP_PATH; otherwise a fixed binary name (avoid dynamic spawn tracing). */
+function resolvePgDumpBin(): string {
+  const fromEnv = process.env.PG_DUMP_PATH?.trim();
+  if (fromEnv) return fromEnv;
+  return "pg_dump";
 }
 
 function runPgDump(outFile: string): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    const bin = await resolvePgDump();
+  return new Promise((resolve, reject) => {
+    const bin = resolvePgDumpBin();
     const child = spawn(
-      bin,
+      /* turbopackIgnore: true */ bin,
       [env.DATABASE_URL, "--no-owner", "--no-acl", "--format=plain", `--file=${outFile}`],
       {
         env: process.env,
         windowsHide: true,
+        shell: false,
       },
     );
 

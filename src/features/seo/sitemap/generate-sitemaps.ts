@@ -13,20 +13,26 @@ const SUB_SITEMAPS = [
 ];
 
 async function loadXslTemplate(): Promise<string> {
-  const candidates = [
-    path.join(getPublicDir(), "sitemap.xsl"),
-    path.join(process.cwd(), "src", "features", "seo", "sitemap", "sitemap.xsl"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      return await readFile(candidate, "utf8");
-    } catch {
-      // try next path (standalone may not ship `src/`)
-    }
+  const publicXsl = path.join(/* turbopackIgnore: true */ getPublicDir(), "sitemap.xsl");
+  try {
+    return await readFile(publicXsl, "utf8");
+  } catch {
+    // standalone may not ship `src/` — try source path only as fallback
   }
 
-  throw new Error("Could not load sitemap.xsl template");
+  const srcXsl = path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    "src",
+    "features",
+    "seo",
+    "sitemap",
+    "sitemap.xsl",
+  );
+  try {
+    return await readFile(srcXsl, "utf8");
+  } catch {
+    throw new Error("Could not load sitemap.xsl template");
+  }
 }
 
 export async function generateSitemaps(): Promise<SitemapGenerateResult> {
