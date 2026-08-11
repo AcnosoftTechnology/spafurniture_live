@@ -100,7 +100,8 @@ function buildMetadataCore(
     : `${origin}/api/og?title=${encodeURIComponent(title)}`;
 
   return {
-    title,
+    // CMS titles are already complete — don't append root layout "| Site name"
+    title: { absolute: title },
     description,
     keywords: fields.keywords?.length ? fields.keywords : undefined,
     alternates: { canonical },

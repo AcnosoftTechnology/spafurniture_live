@@ -245,6 +245,17 @@ export function HomepageEditor({ initialData }: { initialData: AdminHomepageEdit
             <Textarea value={page.metaDescription} onChange={(e) => setPayload({ ...payload, page: { ...page, metaDescription: e.target.value } })} />
           </div>
           <div className="space-y-2">
+            <Label>Canonical URL</Label>
+            <Input
+              value={page.canonicalUrl}
+              onChange={(e) => setPayload({ ...payload, page: { ...page, canonicalUrl: e.target.value } })}
+              placeholder="https://www.spafurniture.com/"
+            />
+            <p className="text-xs text-stone-500">
+              Same record as <strong>Pages → Home</strong>. Live homepage meta/OG/canonical come from here.
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label>Keywords (comma separated)</Label>
             <Input
               value={page.keywords.join(", ")}

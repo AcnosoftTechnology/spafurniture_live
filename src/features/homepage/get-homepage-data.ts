@@ -104,10 +104,15 @@ export async function getHomepageFaqs(): Promise<HomepageFaq[]> {
 
 export async function getHomepageSeo(): Promise<HomepageSeo> {
   try {
-    const page = await prisma.page.findFirst({
-      where: { slug: "home", status: "PUBLISHED" },
-      include: { ogImage: true },
-    });
+    const page =
+      (await prisma.page.findFirst({
+        where: { slug: "home", status: "PUBLISHED" },
+        include: { ogImage: true },
+      })) ??
+      (await prisma.page.findFirst({
+        where: { slug: "home" },
+        include: { ogImage: true },
+      }));
 
     if (!page) {
       return {

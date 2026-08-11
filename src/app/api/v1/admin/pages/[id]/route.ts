@@ -31,6 +31,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const body = await request.json();
     const page = await savePageAdmin(id, body);
     revalidatePath(pagePathForRevalidate(page.slug));
+    if (page.slug === "home") revalidatePath("/", "layout");
     revalidatePath("/admin/seo-pages");
     return jsonOk(page);
   } catch (e) {
