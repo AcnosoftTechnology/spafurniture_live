@@ -57,7 +57,10 @@ function trailingSlashRedirect(req: NextRequest) {
   });
 }
 
-const authMiddleware = auth((req) => {
+export default auth((req) => {
+  const slashRedirect = trailingSlashRedirect(req);
+  if (slashRedirect) return slashRedirect;
+
   const domainRedirect = redirectInToCom(req);
   if (domainRedirect) return domainRedirect;
 
@@ -96,12 +99,6 @@ const authMiddleware = auth((req) => {
 
   return withPathname(NextResponse.next(), pathname);
 });
-
-export default function middleware(req: NextRequest) {
-  const slashRedirect = trailingSlashRedirect(req);
-  if (slashRedirect) return slashRedirect;
-  return authMiddleware(req);
-}
 
 export const config = {
   matcher: [
