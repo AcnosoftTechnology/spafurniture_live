@@ -5,6 +5,7 @@ import { getAboutPublicSlug } from "@/features/about/get-about-data";
 import { getSitemapBaseUrl } from "./sitemap-base-url";
 import type { SitemapData, SitemapUrlEntry } from "./types";
 import { mediaAbsoluteUrl, uniqueUrls, type MediaRef } from "./media-url";
+import { collectHomepageDiscoverableImages } from "@/lib/seo/homepage-discoverable-images";
 
 function maxDate(dates: Date[]): Date {
   if (!dates.length) return new Date();
@@ -133,11 +134,19 @@ export async function fetchSitemapData(): Promise<SitemapData> {
     { slug: "products", path: "/products/" },
   ];
 
+  const homepageImages = await collectHomepageDiscoverableImages(baseUrl);
+
   for (const def of staticDefs) {
     const record = pageBySlug.get(def.slug) ?? pageBySlug.get(def.slug.replace(/-/g, ""));
     const lastmod = record?.updatedAt ?? new Date();
     const images = record?.ogImage ? [mediaAbsoluteUrl(baseUrl, record.ogImage)].filter(Boolean) as string[] : [];
-    addPage(entry(`${baseUrl}${def.path}`, lastmod, images));
+    addPage(
+      entry(
+        `${baseUrl}${def.path}`,
+        lastmod,
+        def.slug === "home" ? uniqueUrls([...images, ...homepageImages.images]) : images,
+      ),
+    );
   }
 
   for (const category of categories) {

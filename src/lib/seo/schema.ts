@@ -210,6 +210,30 @@ export function itemListSchema(input: {
   };
 }
 
+/** Homepage featured collections — image + URL for Google image sitelinks. */
+export function featuredCollectionItemListSchema(input: {
+  name: string;
+  url: string;
+  items: Array<{ name: string; url: string; image: string }>;
+}) {
+  return {
+    "@type": "ItemList",
+    name: input.name,
+    url: input.url,
+    numberOfItems: input.items.length,
+    itemListElement: input.items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "CollectionPage",
+        name: item.name,
+        url: item.url,
+        image: item.image,
+      },
+    })),
+  };
+}
+
 export function faqSchema(faqs: Array<{ question: string; answer: string }>) {
   return {
     "@type": "FAQPage",

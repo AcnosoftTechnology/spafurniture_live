@@ -1,6 +1,6 @@
 import { getHomepageFaqs } from "@/features/homepage/get-homepage-data";
 import { getSiteSchemaSettings } from "@/features/settings/get-site-schema";
-import { buildSiteLayoutSchemas } from "@/lib/seo/build-schemas";
+import { buildHomepageImageSchemas, buildSiteLayoutSchemas } from "@/lib/seo/build-schemas";
 import { getPublicSiteConfig } from "@/lib/site-settings";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
 import { headers } from "next/headers";
@@ -40,6 +40,11 @@ export async function SiteHeadJsonLd() {
     siteSchema.globalSchemaJson,
     onHomepage ? homepageFaqs : undefined,
   );
+
+  if (onHomepage) {
+    const homepageImages = await buildHomepageImageSchemas(baseUrl);
+    if (homepageImages) scripts.push(homepageImages);
+  }
 
   return (
     <>

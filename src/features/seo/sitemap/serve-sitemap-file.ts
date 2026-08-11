@@ -7,6 +7,8 @@ import {
   rewriteSitemapHosts,
   sitemapHostMismatch,
 } from "./sitemap-base-url";
+import { replaceUrlImages } from "./build-xml";
+import { collectHomepageDiscoverableImages } from "@/lib/seo/homepage-discoverable-images";
 
 export const SITEMAP_FILES = [
   "sitemap.xml",
@@ -89,6 +91,17 @@ export async function serveSitemapFile(name: string): Promise<Response> {
 
   if (safeName.endsWith(".xml")) {
     content = rewriteSitemapHosts(content, serveBaseUrl);
+  }
+
+  if (safeName === "page-sitemap.xml") {
+    try {
+      const discovered = await collectHomepageDiscoverableImages(serveBaseUrl);
+      if (discovered.images.length) {
+        content = replaceUrlImages(content, `${serveBaseUrl}/`, discovered.images);
+      }
+    } catch (error) {
+      console.error("[sitemap] homepage image enrich failed:", error);
+    }
   }
 
   return new Response(content, {
