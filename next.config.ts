@@ -79,6 +79,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  /**
+   * Keep title/canonical/OG in <head> for View Source + all crawlers.
+   * Next 15+ otherwise streams generateMetadata into <body>.
+   */
+  htmlLimitedBots: /.*/,
   /** Match WordPress / spafurniture.in URLs (e.g. /products/wooden-shirodhara-stand/) */
   trailingSlash: true,
   /** Auth.js calls /api/auth/session (no slash); avoid 308 → HTML parse errors in the client. */

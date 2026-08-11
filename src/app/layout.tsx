@@ -22,6 +22,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <head>
+        <link
+          rel="preload"
+          href="/assets/fonts/josefin-sans-normal.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         <FaviconHeadLinks />
         <SiteOgLogoMeta />
         <SiteHeadJsonLd />

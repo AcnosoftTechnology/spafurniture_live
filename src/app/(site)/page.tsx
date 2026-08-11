@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { HeroLcpPreloads } from "@/components/site/home/hero-banner";
 import { HomepageShell } from "@/components/site/home/homepage-shell";
-import { getHomepageSeo } from "@/features/homepage/get-homepage-data";
+import { getHomepageContent, getHomepageSeo } from "@/features/homepage/get-homepage-data";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const revalidate = 3600;
@@ -24,7 +25,12 @@ export async function generateMetadata(): Promise<Metadata> {
   );
 }
 
-export default function HomePage() {
-  // git-pull-check: 2026-07-27
-  return <HomepageShell />;
+export default async function HomePage() {
+  const homepage = await getHomepageContent();
+  return (
+    <>
+      <HeroLcpPreloads hero={homepage.hero} />
+      <HomepageShell />
+    </>
+  );
 }

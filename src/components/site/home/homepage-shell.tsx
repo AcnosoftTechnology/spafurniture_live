@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
-import { HeroBanner, HeroLcpPreloads } from "@/components/site/home/hero-banner";
+import { HeroBanner } from "@/components/site/home/hero-banner";
 import { HeroBannerSkeleton } from "@/components/site/home/hero-banner-skeleton";
 import { BackgroundTextSection } from "@/components/site/home/background-text-section";
 import { ProductsIntro } from "@/components/site/home/products-intro";
@@ -39,7 +39,6 @@ export async function HomepageContent() {
 
   return (
     <>
-      <HeroLcpPreloads hero={content.hero} />
       <HeroBanner hero={content.hero} />
       <BackgroundTextSection data={content.backgroundText} />
       <ProductsIntro data={content.productsIntro} />
