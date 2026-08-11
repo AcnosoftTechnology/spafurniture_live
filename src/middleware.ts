@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth/config";
-import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 const publicAdminPaths = ["/admin/login", "/admin/forgot-password", "/admin/reset-password"];
 
@@ -97,10 +97,10 @@ const authMiddleware = auth((req) => {
   return withPathname(NextResponse.next(), pathname);
 });
 
-export default function middleware(req: NextRequest, event: NextFetchEvent) {
+export default function middleware(req: NextRequest) {
   const slashRedirect = trailingSlashRedirect(req);
   if (slashRedirect) return slashRedirect;
-  return authMiddleware(req, event);
+  return authMiddleware(req);
 }
 
 export const config = {
