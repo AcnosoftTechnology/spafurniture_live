@@ -56,28 +56,3 @@ export function maxLastmod(entries: Array<{ lastmod: Date }>): Date {
   if (!entries.length) return new Date();
   return entries.reduce((max, e) => (e.lastmod > max ? e.lastmod : max), entries[0].lastmod);
 }
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Replace &lt;image:image&gt; nodes on one sitemap URL (keeps lastmod). */
-export function replaceUrlImages(xml: string, loc: string, images: string[]): string {
-  if (!xml || !loc || !images.length) return xml;
-
-  const candidates = loc.endsWith("/") ? [loc, loc.replace(/\/+$/, "")] : [loc, `${loc}/`];
-  for (const candidate of candidates) {
-    const escapedLoc = escapeXml(candidate);
-    const re = new RegExp(
-      `(<url>\\s*<loc>${escapeRegExp(escapedLoc)}</loc>)([\\s\\S]*?)(\\s*</url>)`,
-    );
-    if (!re.test(xml)) continue;
-    return xml.replace(re, (_full, start: string, middle: string, end: string) => {
-      const lastmod = middle.match(/<lastmod>[^<]+<\/lastmod>/)?.[0];
-      const lastmodBlock = lastmod ? `\n    ${lastmod}` : "";
-      return `${start}${lastmodBlock}\n${buildImageNodes(images)}${end}`;
-    });
-  }
-
-  return xml;
-}

@@ -3,7 +3,6 @@ import {
   breadcrumbSchema,
   catalogProductSchema,
   faqSchema,
-  featuredCollectionItemListSchema,
   itemListSchema,
   jsonLdDocument,
   jsonLdGraph,
@@ -13,7 +12,6 @@ import {
   websiteSchema,
   type SchemaNode,
 } from "@/lib/seo/schema";
-import { collectHomepageDiscoverableImages } from "@/lib/seo/homepage-discoverable-images";
 import { resolveCategoryFaqsForSchema, resolveProductFaqsForSchema } from "@/lib/seo/resolve-faqs";
 import { manualSchemaScript, normalizeManualSchema } from "@/lib/seo/manual-schema";
 import { isGlobalManualSchemaActive } from "@/features/settings/get-site-schema";
@@ -76,43 +74,6 @@ export async function buildSiteLayoutSchema(
 ) {
   const scripts = await buildSiteLayoutSchemas(site, baseUrl, globalSchemaJson, homepageFaqs);
   return scripts[0] ?? jsonLdDocument(organizationSchema(site, baseUrl));
-}
-
-/** Hidden JSON-LD only — associates homepage with featured collection photos. */
-export async function buildHomepageImageSchemas(baseUrl: string) {
-  const data = await collectHomepageDiscoverableImages(baseUrl);
-  if (!data.images.length && !data.items.length) return null;
-
-  const nodes: SchemaNode[] = [
-    {
-      "@type": "WebPage",
-      "@id": `${baseUrl}/#webpage`,
-      url: `${baseUrl}/`,
-      name: data.pageName,
-      isPartOf: { "@id": `${baseUrl}/#website` },
-      ...(data.primaryImage
-        ? {
-            primaryImageOfPage: {
-              "@type": "ImageObject",
-              url: data.primaryImage,
-            },
-          }
-        : {}),
-      ...(data.images.length ? { image: data.images } : {}),
-    },
-  ];
-
-  if (data.items.length) {
-    nodes.push(
-      featuredCollectionItemListSchema({
-        name: "Featured spa furniture",
-        url: `${baseUrl}/`,
-        items: data.items,
-      }),
-    );
-  }
-
-  return jsonLdGraph(...nodes);
 }
 
 /** Homepage-only extras (e.g. streamed in page) — prefer layout `buildSiteLayoutSchema` with FAQs. */
