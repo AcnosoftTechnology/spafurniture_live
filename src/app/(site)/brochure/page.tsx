@@ -6,18 +6,21 @@ export const revalidate = 3600;
 
 export async function generateMetadata() {
   const { seo } = await getBrochurePageData();
-  return buildPageMetadata({
-    title: seo.seoTitle || seo.title || "Brochure",
-    metaDescription:
-      seo.metaDescription ||
-      "Browse the Esthetica spa furniture digital brochure and download the PDF catalogue.",
-    keywords: seo.keywords,
-    canonicalUrl: seo.canonicalUrl,
-    ogTitle: seo.ogTitle,
-    ogDescription: seo.ogDescription,
-    ogImage: seo.ogImage,
-    robots: seo.robots,
-  });
+  return buildPageMetadata(
+    {
+      title: seo.seoTitle || seo.title || "Brochure",
+      metaDescription:
+        seo.metaDescription ||
+        "Browse the Esthetica spa furniture digital brochure and download the PDF catalogue.",
+      keywords: seo.keywords,
+      canonicalUrl: seo.canonicalUrl,
+      ogTitle: seo.ogTitle,
+      ogDescription: seo.ogDescription,
+      ogImage: seo.ogImage,
+      robots: seo.robots,
+    },
+    "/brochure/",
+  );
 }
 
 export default async function BrochurePage() {

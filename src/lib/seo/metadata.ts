@@ -27,11 +27,52 @@ function absoluteAssetUrl(pathOrUrl: string, baseUrl: string): string {
   return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+function withTrailingSlash(path: string) {
+  if (path === "/") return "/";
+  return path.endsWith("/") ? path : `${path}/`;
+}
+
+function pageUrlFromPath(origin: string, path: string) {
+  const raw = path.trim();
+  if (!raw || raw === "/") return `${origin}/`;
+  const normalized = withTrailingSlash(raw.startsWith("/") ? raw : `/${raw}`);
+  return `${origin}${normalized}`;
+}
+
+function isSiteHomeUrl(value: string, origin: string) {
+  const trimmed = value.trim().replace(/\/+$/, "");
+  return trimmed === origin || trimmed === `${origin}/` || trimmed === "/";
+}
+
+/** Prefer this page's URL. Ignore empty or accidental homepage canonicals on inner pages. */
+function resolveCanonical(fields: SeoFields, path: string, origin: string) {
+  const pageUrl = pageUrlFromPath(origin, path);
+  const override = fields.canonicalUrl?.trim();
+  if (!override) return pageUrl;
+
+  const pageIsHome = !path.trim() || path.trim() === "/";
+  if (!pageIsHome && isSiteHomeUrl(override, origin)) return pageUrl;
+
+  if (override.startsWith("http://") || override.startsWith("https://")) {
+    try {
+      const url = new URL(override);
+      if (url.pathname !== "/" && !url.pathname.endsWith("/")) {
+        url.pathname = `${url.pathname}/`;
+      }
+      return url.toString();
+    } catch {
+      return pageUrl;
+    }
+  }
+
+  return pageUrlFromPath(origin, override);
+}
+
 function buildMetadataCore(fields: SeoFields, path = "", baseUrl: string): Metadata {
   const title = fields.seoTitle || fields.title;
   const description = fields.metaDescription || undefined;
   const origin = baseUrl.replace(/\/+$/, "");
-  const canonical = fields.canonicalUrl || `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  const canonical = resolveCanonical(fields, path, origin);
   const ogImage = fields.ogImage?.trim()
     ? absoluteAssetUrl(fields.ogImage, origin)
     : `${origin}/api/og?title=${encodeURIComponent(title)}`;
