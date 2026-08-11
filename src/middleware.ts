@@ -24,13 +24,20 @@ function redirectInToCom(req: { headers: Headers; nextUrl: URL }) {
   return NextResponse.redirect(target, 301);
 }
 
-function requestPathAndSearch(req: NextRequest) {
+function incomingPathnames(req: NextRequest) {
+  const paths = [req.nextUrl.pathname];
   try {
-    const url = new URL(req.url);
-    return { pathname: url.pathname, search: url.search };
+    paths.push(new URL(req.url).pathname);
   } catch {
-    return { pathname: req.nextUrl.pathname, search: req.nextUrl.search };
+    /* ignore */
   }
+  for (const header of ["x-original-uri", "x-forwarded-uri", "x-invoke-path"]) {
+    const raw = req.headers.get(header);
+    if (!raw) continue;
+    const path = raw.split("?")[0] ?? "";
+    if (path.startsWith("/")) paths.push(path);
+  }
+  return paths;
 }
 
 function needsTrailingSlash(pathname: string) {
@@ -41,25 +48,21 @@ function needsTrailingSlash(pathname: string) {
   return true;
 }
 
-/**
- * Force one public URL: /about-us/ not /about-us.
- * Use a relative Location string — NextURL.redirect() can strip the slash and loop.
- */
+/** /about-us → /about-us/ (308). Absolute Location so the page never renders slashless (500). */
 function trailingSlashRedirect(req: NextRequest) {
-  const { pathname, search } = requestPathAndSearch(req);
-  if (!needsTrailingSlash(pathname)) return null;
-  return new NextResponse(null, {
-    status: 308,
-    headers: {
-      Location: `${pathname}/${search}`,
-      "Cache-Control": "private, no-store",
-    },
-  });
+  const slashless = incomingPathnames(req).find((path) => needsTrailingSlash(path));
+  if (!slashless) return null;
+  const dest = `${req.nextUrl.origin}${slashless.replace(/\/+$/, "")}/${req.nextUrl.search}`;
+  return NextResponse.redirect(dest, 308);
 }
 
 export default auth((req) => {
-  const slashRedirect = trailingSlashRedirect(req);
-  if (slashRedirect) return slashRedirect;
+  try {
+    const slashRedirect = trailingSlashRedirect(req);
+    if (slashRedirect) return slashRedirect;
+  } catch {
+    /* fall through — never 500 because of slash handling */
+  }
 
   const domainRedirect = redirectInToCom(req);
   if (domainRedirect) return domainRedirect;
