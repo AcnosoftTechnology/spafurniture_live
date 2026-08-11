@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth/config";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
 const publicAdminPaths = ["/admin/login", "/admin/forgot-password", "/admin/reset-password"];
 
@@ -24,7 +24,40 @@ function redirectInToCom(req: { headers: Headers; nextUrl: URL }) {
   return NextResponse.redirect(target, 301);
 }
 
-export default auth((req) => {
+function requestPathAndSearch(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    return { pathname: url.pathname, search: url.search };
+  } catch {
+    return { pathname: req.nextUrl.pathname, search: req.nextUrl.search };
+  }
+}
+
+function needsTrailingSlash(pathname: string) {
+  if (pathname === "/" || pathname.endsWith("/")) return false;
+  if (pathname.startsWith("/api/") || pathname === "/api") return false;
+  if (pathname.startsWith("/_next/")) return false;
+  if (/\.[a-zA-Z0-9]{1,8}$/.test(pathname)) return false;
+  return true;
+}
+
+/**
+ * Force one public URL: /about-us/ not /about-us.
+ * Use a relative Location string — NextURL.redirect() can strip the slash and loop.
+ */
+function trailingSlashRedirect(req: NextRequest) {
+  const { pathname, search } = requestPathAndSearch(req);
+  if (!needsTrailingSlash(pathname)) return null;
+  return new NextResponse(null, {
+    status: 308,
+    headers: {
+      Location: `${pathname}/${search}`,
+      "Cache-Control": "private, no-store",
+    },
+  });
+}
+
+const authMiddleware = auth((req) => {
   const domainRedirect = redirectInToCom(req);
   if (domainRedirect) return domainRedirect;
 
@@ -63,6 +96,12 @@ export default auth((req) => {
 
   return withPathname(NextResponse.next(), pathname);
 });
+
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+  const slashRedirect = trailingSlashRedirect(req);
+  if (slashRedirect) return slashRedirect;
+  return authMiddleware(req, event);
+}
 
 export const config = {
   matcher: [
