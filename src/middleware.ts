@@ -20,8 +20,19 @@ function redirectInToCom(req: { headers: Headers; nextUrl: URL }) {
   const host = (req.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
   if (!LEGACY_IN_HOSTS.has(host)) return null;
 
-  const target = new URL(req.nextUrl.pathname + req.nextUrl.search, CANONICAL_COM_ORIGIN);
+  let path = req.nextUrl.pathname;
+  if (needsTrailingSlash(path)) path = `${path}/`;
+  const target = new URL(path + req.nextUrl.search, CANONICAL_COM_ORIGIN);
   return NextResponse.redirect(target, 301);
+}
+
+/** Keep one public URL shape: /about-us/ (not /about-us). Skip files and API. */
+function needsTrailingSlash(pathname: string) {
+  if (pathname === "/" || pathname.endsWith("/")) return false;
+  if (pathname.startsWith("/api/") || pathname === "/api") return false;
+  if (pathname.startsWith("/_next/")) return false;
+  if (/\.[a-zA-Z0-9]{1,8}$/.test(pathname)) return false;
+  return true;
 }
 
 export default auth((req) => {
@@ -29,6 +40,12 @@ export default auth((req) => {
   if (domainRedirect) return domainRedirect;
 
   const { pathname } = req.nextUrl;
+
+  if (needsTrailingSlash(pathname)) {
+    const url = req.nextUrl.clone();
+    url.pathname = `${pathname}/`;
+    return NextResponse.redirect(url, 301);
+  }
   const normalizedPath = normalizePath(pathname);
   const isPublicAdmin = publicAdminPaths.some((p) => normalizedPath.startsWith(p));
   const isAdminRoute = normalizedPath.startsWith("/admin");

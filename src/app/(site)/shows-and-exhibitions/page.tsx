@@ -10,8 +10,12 @@ import { mediaUrl } from "@/lib/utils";
 
 export const revalidate = 3600;
 
-export async function generateMetadata() {
-  const { seo } = await getShowsExhibitionsPageData();
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const [{ seo }, { page }] = await Promise.all([getShowsExhibitionsPageData(), searchParams]);
   return buildPageMetadata(
     {
       title: seo.seoTitle || seo.title || "Shows & Exhibitions",
@@ -26,6 +30,7 @@ export async function generateMetadata() {
       robots: seo.robots,
     },
     SHOWS_EXHIBITIONS_INDEX_PATH,
+    { page },
   );
 }
 

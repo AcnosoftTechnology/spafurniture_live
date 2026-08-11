@@ -3,6 +3,11 @@ import { getSiteFaviconMetadata } from "@/lib/favicon";
 import { getSiteBaseUrl } from "@/lib/site-url.server";
 import { mediaUrl } from "@/lib/utils";
 
+export type MetadataPathOptions = {
+  /** Listing pagination (`?page=2`). Page 1 stays without a query. */
+  page?: string | number | null;
+};
+
 export type SeoFields = {
   title: string;
   seoTitle?: string | null;
@@ -68,11 +73,28 @@ function resolveCanonical(fields: SeoFields, path: string, origin: string) {
   return pageUrlFromPath(origin, override);
 }
 
-function buildMetadataCore(fields: SeoFields, path = "", baseUrl: string): Metadata {
+function appendPagination(url: string, page?: string | number | null) {
+  const n = Math.floor(Number(page));
+  if (!Number.isFinite(n) || n <= 1) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("page", String(n));
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function buildMetadataCore(
+  fields: SeoFields,
+  path = "",
+  baseUrl: string,
+  options?: MetadataPathOptions,
+): Metadata {
   const title = fields.seoTitle || fields.title;
   const description = fields.metaDescription || undefined;
   const origin = baseUrl.replace(/\/+$/, "");
-  const canonical = resolveCanonical(fields, path, origin);
+  const canonical = appendPagination(resolveCanonical(fields, path, origin), options?.page);
   const ogImage = fields.ogImage?.trim()
     ? absoluteAssetUrl(fields.ogImage, origin)
     : `${origin}/api/og?title=${encodeURIComponent(title)}`;
@@ -112,13 +134,22 @@ function buildMetadataCore(fields: SeoFields, path = "", baseUrl: string): Metad
 }
 
 /** Sync metadata without favicon — prefer buildPageMetadata() for pages. */
-export function buildMetadata(fields: SeoFields, path = "", baseUrl?: string): Metadata {
-  return buildMetadataCore(fields, path, baseUrl ?? "http://localhost:3000");
+export function buildMetadata(
+  fields: SeoFields,
+  path = "",
+  baseUrl?: string,
+  options?: MetadataPathOptions,
+): Metadata {
+  return buildMetadataCore(fields, path, baseUrl ?? "http://localhost:3000", options);
 }
 
 /** Page metadata with admin favicon from site settings on every route. */
-export async function buildPageMetadata(fields: SeoFields, path = ""): Promise<Metadata> {
+export async function buildPageMetadata(
+  fields: SeoFields,
+  path = "",
+  options?: MetadataPathOptions,
+): Promise<Metadata> {
   const [baseUrl, icons] = await Promise.all([getSiteBaseUrl(), getSiteFaviconMetadata()]);
-  const core = buildMetadataCore(fields, path, baseUrl);
+  const core = buildMetadataCore(fields, path, baseUrl, options);
   return icons ? { ...core, icons } : core;
 }

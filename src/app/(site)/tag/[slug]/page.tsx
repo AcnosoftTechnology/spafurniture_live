@@ -6,13 +6,20 @@ import { blogTagPath } from "@/lib/blog-paths";
 
 export const revalidate = 3600;
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const [{ slug }, { page }] = await Promise.all([params, searchParams]);
   const tag = await prisma.blogTag.findUnique({ where: { slug } }).catch(() => null);
   if (!tag) return {};
   return buildPageMetadata(
     { title: `Tag: ${tag.name}`, metaDescription: `Articles tagged ${tag.name}` },
     blogTagPath(slug),
+    { page },
   );
 }
 

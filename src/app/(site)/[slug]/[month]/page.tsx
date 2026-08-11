@@ -11,10 +11,12 @@ export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; month: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const { slug, month } = await params;
+  const [{ slug, month }, { page }] = await Promise.all([params, searchParams]);
   const parsed = parseArchiveRouteParams(slug, month);
   if (!parsed) return {};
   const label = blogArchiveLabel(parsed.year, parsed.month);
@@ -24,6 +26,7 @@ export async function generateMetadata({
       metaDescription: `Blog posts published in ${label} from Esthetica Spa Furniture.`,
     },
     blogArchivePath(parsed.year, parsed.month),
+    { page },
   );
 }
 

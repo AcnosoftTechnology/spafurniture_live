@@ -7,12 +7,21 @@ import { prisma } from "@/lib/prisma";
 
 export const revalidate = 3600;
 
-export async function generateMetadata() {
-  return buildPageMetadata({
-    title: "Blog",
-    metaDescription:
-      "News, guides and insights on spa furniture, wellness design and salon furniture from Esthetica.",
-  }, "/blog/");
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page } = await searchParams;
+  return buildPageMetadata(
+    {
+      title: "Blog",
+      metaDescription:
+        "News, guides and insights on spa furniture, wellness design and salon furniture from Esthetica.",
+    },
+    "/blog/",
+    { page },
+  );
 }
 
 export default async function BlogPage({

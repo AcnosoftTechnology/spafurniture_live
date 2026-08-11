@@ -6,13 +6,20 @@ import { blogCategoryPath } from "@/lib/blog-paths";
 
 export const revalidate = 3600;
 
-export async function generateMetadata({ params }: { params: Promise<{ segments?: string[] }> }) {
-  const { segments = [] } = await params;
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ segments?: string[] }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const [{ segments = [] }, { page }] = await Promise.all([params, searchParams]);
   const category = await getBlogCategoryByPath(segments).catch(() => null);
   if (!category) return {};
   return buildPageMetadata(
     { title: `Category: ${category.name}`, metaDescription: `Articles in ${category.name}` },
     blogCategoryPath(category),
+    { page },
   );
 }
 
