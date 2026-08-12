@@ -1356,7 +1356,7 @@ img{
   }
   .esth-premium-banner--regional .esth-premium-image img,
   .esth-premium-banner--regional .esth-premium-image .esth-premium-hero-img{
-    width:auto !important;
+    width:100% !important;
     max-width:100% !important;
     height:auto !important;
     /* max-width:94% !important;
@@ -8111,7 +8111,7 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
 
 .esth-premium-banner--regional .esth-premium-image img,
 .esth-premium-banner--regional .esth-premium-image .esth-premium-hero-img{
-  width:auto !important;
+  width:100% !important;
   /* max-width:min(58vw, 700px) !important;
   max-height:min(62vh, 520px) !important; */
   height:auto !important;
@@ -8141,7 +8141,7 @@ body:has(.esth-enquiry-modal[data-state="open"]) .esth-floating-contact{
   }
   .esth-premium-banner--regional .esth-premium-image img,
   .esth-premium-banner--regional .esth-premium-image .esth-premium-hero-img{
-    width:auto !important;
+    width:100% !important;
     max-width:100% !important;
     height:auto !important;
     /* max-width:94% !important;
