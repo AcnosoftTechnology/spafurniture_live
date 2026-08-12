@@ -935,10 +935,9 @@ img{
 /* Regional landing pages — banner + intro (reference: /uae/ legacy layout) */
 .esth-premium-banner--regional{
   --esth-regional-media-shift:15px;
-  --esth-regional-bg-width:100%;
-  
-  height: 85dvh;
-  /*min-height:100vh;*/
+  --esth-regional-bg-width:100%;  
+  height: 78dvh;
+  min-height:78dvh;
   max-height:none;
 }
 
