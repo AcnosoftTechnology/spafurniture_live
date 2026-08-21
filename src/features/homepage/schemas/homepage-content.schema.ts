@@ -14,6 +14,12 @@ export const homepageContentSchema = z.object({
     /** Optional mobile-only hero (falls back to imagePath). */
     mobileImagePath: z.string().optional(),
     mobileMediaId: z.string().nullable().optional(),
+    /**
+     * Optional banner watermark (e.g. PERFECTION). Empty string hides it.
+     * Default keeps the legacy bundled asset until cleared in admin.
+     */
+    bgImagePath: z.string().optional().default("/assets/images/bg/perfection.png"),
+    bgMediaId: z.string().nullable().optional(),
   }),
   backgroundText: z.object({
     text: z.string(),
@@ -72,6 +78,7 @@ export const defaultHomepageContent: HomepageContent = {
     imagePath: "/assets/images/bg/spa-main.webp",
     mobileImagePath: "/assets/images/bg/spa-main-mobile.webp",
     alt: "Spa bed",
+    bgImagePath: "/assets/images/bg/perfection.png",
   },
   backgroundText: {
     text: "Combining design innovation with aesthetics to redefine the standards of spa and wellness furniture. Our spa furniture adheres to the highest international quality standards, reflecting our unwavering commitment to delivering top-tier products.",

@@ -7,7 +7,18 @@ export type HeroImageFields = {
   imagePath: string;
   alt: string;
   mobileImagePath?: string | null;
+  /** Banner watermark (PERFECTION). Empty/null hides; undefined keeps legacy default. */
+  bgImagePath?: string | null;
 };
+
+const LEGACY_BANNER_BG = "/assets/images/bg/perfection.png";
+
+function resolveBannerBgUrl(bgImagePath: string | null | undefined): string | null {
+  if (bgImagePath === "" || bgImagePath === null) return null;
+  if (bgImagePath === undefined) return mediaUrl(LEGACY_BANNER_BG);
+  const trimmed = bgImagePath.trim();
+  return trimmed ? mediaUrl(trimmed) : null;
+}
 
 function resolveHeroPaths(hero: HeroImageFields) {
   let imagePath = hero.imagePath;
@@ -172,18 +183,22 @@ export function HeroBanner({
     );
   }
 
+  const bannerBgUrl = resolveBannerBgUrl(hero.bgImagePath);
+
   return (
     <section
       className={`esth-premium-banner${variant === "regional" ? " esth-premium-banner--regional" : ""}`}
       id={sectionId}
     >
-      <ParallaxSectionBg
-        className="esth-premium-banner-bg"
-        imageUrl="/assets/images/bg/perfection.png"
-        maxShift={variant === "regional" ? 0 : 165}
-        strength={variant === "regional" ? 0 : undefined}
-        parallaxScale={1}
-      />
+      {bannerBgUrl ? (
+        <ParallaxSectionBg
+          className="esth-premium-banner-bg"
+          imageUrl={bannerBgUrl}
+          maxShift={variant === "regional" ? 0 : 165}
+          strength={variant === "regional" ? 0 : undefined}
+          parallaxScale={1}
+        />
+      ) : null}
       <div className=" esth-premium-banner-shell">
         <div className="esth-premium-banner-inner">
           <div className="esth-premium-image">

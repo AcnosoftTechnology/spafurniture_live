@@ -338,6 +338,28 @@ export function HomepageEditor({ initialData }: { initialData: AdminHomepageEdit
             Mobile image is optional. Upload a taller / larger crop for phones (≤768px). If empty, desktop
             image is used.
           </p>
+          <MediaField
+            label="Banner background text image (PERFECTION)"
+            value={pathToMedia(
+              content.hero.bgImagePath ?? "",
+              content.hero.bgMediaId,
+              "Banner background text",
+            )}
+            onChange={(media) =>
+              setContent({
+                ...content,
+                hero: {
+                  ...content.hero,
+                  bgImagePath: media?.path ?? "",
+                  bgMediaId: media?.mediaId ?? null,
+                },
+              })
+            }
+            previewClassName="h-24 w-full max-w-md bg-stone-100 object-contain"
+          />
+          <p className="text-xs text-stone-500">
+            Optional watermark behind the spa bed (e.g. PERFECTION). Remove to hide it completely.
+          </p>
           <div className="space-y-2">
             <Label>Alt text</Label>
             <Input
