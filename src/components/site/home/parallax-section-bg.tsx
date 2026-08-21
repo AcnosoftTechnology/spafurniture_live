@@ -1,6 +1,7 @@
 type ParallaxSectionBgProps = {
   className?: string;
-  imageUrl: string;
+  /** Empty / null keeps the layout layer without painting a background. */
+  imageUrl?: string | null;
   maxShift?: number;
   strength?: number;
   parallaxScale?: number;
@@ -11,11 +12,12 @@ type ParallaxSectionBgProps = {
 
 /** Static section background — no scroll-linked JS (native scroll only). */
 export function ParallaxSectionBg({ className, imageUrl }: ParallaxSectionBgProps) {
+  const url = imageUrl?.trim();
   return (
     <div
       className={className}
       aria-hidden
-      style={{ backgroundImage: `url("${imageUrl}")` }}
+      style={url ? { backgroundImage: `url("${url}")` } : undefined}
     />
   );
 }

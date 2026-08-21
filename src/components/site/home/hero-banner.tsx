@@ -190,15 +190,14 @@ export function HeroBanner({
       className={`esth-premium-banner${variant === "regional" ? " esth-premium-banner--regional" : ""}`}
       id={sectionId}
     >
-      {bannerBgUrl ? (
-        <ParallaxSectionBg
-          className="esth-premium-banner-bg"
-          imageUrl={bannerBgUrl}
-          maxShift={variant === "regional" ? 0 : 165}
-          strength={variant === "regional" ? 0 : undefined}
-          parallaxScale={1}
-        />
-      ) : null}
+      {/* Always keep this layer for layout; only the image paint is optional. */}
+      <ParallaxSectionBg
+        className="esth-premium-banner-bg"
+        imageUrl={bannerBgUrl}
+        maxShift={variant === "regional" ? 0 : 165}
+        strength={variant === "regional" ? 0 : undefined}
+        parallaxScale={1}
+      />
       <div className=" esth-premium-banner-shell">
         <div className="esth-premium-banner-inner">
           <div className="esth-premium-image">
