@@ -1,4 +1,3 @@
-import { getImageProps } from "next/image";
 import type { ReactNode } from "react";
 import { ParallaxSectionBg } from "@/components/site/home/parallax-section-bg";
 import { mediaUrl } from "@/lib/utils";
@@ -36,27 +35,6 @@ function resolveHeroPaths(hero: HeroImageFields) {
   return { imagePath, mobileImagePath };
 }
 
-function isAnimatedGif(path: string) {
-  return /\.gif(\?|#|$)/i.test(path);
-}
-
-function buildOptimizedPicture(opts: {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
-}) {
-  return getImageProps({
-    src: opts.src,
-    alt: opts.alt,
-    width: opts.width,
-    height: opts.height,
-    sizes: "100vw",
-    priority: true,
-    quality: 78,
-  }).props;
-}
-
 /** Hoist into <head> from the homepage (and regional pages) for faster mobile LCP. */
 export function HeroLcpPreloads({ hero }: { hero: HeroImageFields }) {
   const resolved = resolveHeroPaths(hero);
@@ -65,55 +43,19 @@ export function HeroLcpPreloads({ hero }: { hero: HeroImageFields }) {
     ? mediaUrl(resolved.mobileImagePath)
     : desktopSrc;
 
-  if (isAnimatedGif(desktopSrc) || isAnimatedGif(mobileSrc)) {
-    return (
-      <>
-        <link
-          rel="preload"
-          as="image"
-          href={mobileSrc}
-          media="(max-width: 768px)"
-          fetchPriority="high"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href={desktopSrc}
-          media="(min-width: 769px)"
-          fetchPriority="high"
-        />
-      </>
-    );
-  }
-
-  const desktop = buildOptimizedPicture({
-    src: desktopSrc,
-    alt: hero.alt,
-    width: 1400,
-    height: 1050,
-  });
-  const mobile = buildOptimizedPicture({
-    src: mobileSrc,
-    alt: hero.alt,
-    width: 900,
-    height: 1200,
-  });
-
   return (
     <>
       <link
         rel="preload"
         as="image"
-        imageSrcSet={mobile.srcSet}
-        imageSizes={mobile.sizes}
+        href={mobileSrc}
         media="(max-width: 768px)"
         fetchPriority="high"
       />
       <link
         rel="preload"
         as="image"
-        imageSrcSet={desktop.srcSet}
-        imageSizes={desktop.sizes}
+        href={desktopSrc}
         media="(min-width: 769px)"
         fetchPriority="high"
       />
@@ -134,54 +76,24 @@ export function HeroBanner({
 }) {
   const resolved = resolveHeroPaths(hero);
   const desktopSrc = mediaUrl(resolved.imagePath);
-  const mobilePath = resolved.mobileImagePath;
-  const mobileSrc = mobilePath ? mediaUrl(mobilePath) : null;
-  const gifSafe = isAnimatedGif(desktopSrc) || (mobileSrc ? isAnimatedGif(mobileSrc) : false);
+  const mobileSrc = resolved.mobileImagePath ? mediaUrl(resolved.mobileImagePath) : null;
 
-  let pictureInner: ReactNode;
-
-  if (gifSafe) {
-    pictureInner = (
-      <>
-        {mobileSrc ? <source media="(max-width: 768px)" srcSet={mobileSrc} /> : null}
-        {/* eslint-disable-next-line @next/next/no-img-element -- GIF art-direction */}
-        <img
-          src={desktopSrc}
-          alt={hero.alt}
-          width={1400}
-          height={1050}
-          className="esth-premium-hero-img"
-          fetchPriority="high"
-        />
-      </>
-    );
-  } else {
-    const desktop = buildOptimizedPicture({
-      src: desktopSrc,
-      alt: hero.alt,
-      width: 1400,
-      height: 1050,
-    });
-    const mobile = mobileSrc
-      ? buildOptimizedPicture({
-          src: mobileSrc,
-          alt: hero.alt,
-          width: 900,
-          height: 1200,
-        })
-      : null;
-    const { srcSet: desktopSrcSet, ...imgProps } = desktop;
-    pictureInner = (
-      <>
-        {mobile?.srcSet ? (
-          <source media="(max-width: 768px)" srcSet={mobile.srcSet} sizes={mobile.sizes} />
-        ) : null}
-        <source media="(min-width: 769px)" srcSet={desktopSrcSet} sizes={desktop.sizes} />
-        {/* eslint-disable-next-line @next/next/no-img-element -- picture + getImageProps */}
-        <img {...imgProps} className="esth-premium-hero-img" alt={hero.alt} />
-      </>
-    );
-  }
+  // Direct public URLs (e.g. /uploads/...) — no /_next/image optimizer for the hero.
+  const pictureInner: ReactNode = (
+    <>
+      {mobileSrc ? <source media="(max-width: 768px)" srcSet={mobileSrc} /> : null}
+      {/* eslint-disable-next-line @next/next/no-img-element -- hero uses live media paths */}
+      <img
+        src={desktopSrc}
+        alt={hero.alt}
+        width={1400}
+        height={1050}
+        className="esth-premium-hero-img"
+        fetchPriority="high"
+        decoding="async"
+      />
+    </>
+  );
 
   const bannerBgUrl = resolveBannerBgUrl(hero.bgImagePath);
 
