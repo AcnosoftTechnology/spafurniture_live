@@ -9,7 +9,7 @@ export function BackgroundTextSection({ data }: { data: HomepageContent["backgro
     <section className="esth-bgtext-section" id="about">
       <ParallaxSectionBg
         className="esth-bgtext-image"
-        imageUrl="/assets/images/bg/bg-icon.webp"
+        imageUrl="/assets/images/bg/BeigeLogo.png"
         maxShift={180}
       />
       <EsthContainer>
