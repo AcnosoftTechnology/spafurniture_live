@@ -1446,19 +1446,19 @@ main:has(#qatar){
   position:relative;
   overflow:hidden;
   padding:140px 0;
-  background:#f4ede9;
+  background:#f6f0ec;
 }
 
 .esth-bgtext-image{
-  opacity:1.45;
-  z-index:1;
-  position:absolute;
-  inset:-14%;
-  background-repeat:no-repeat;
-  background-size:cover;
-  background-position:center;
-  pointer-events:none;
-  transform-origin:center center;
+    opacity: 1.45;
+    z-index: 1;
+    pointer-events: none;
+    transform-origin: center;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    position: absolute;
+    inset: -2%;
 }
 
 .esth-bgtext-content{
