@@ -1,9 +1,10 @@
 /**
- * Public blog URLs — match spafurniture.in:
- * Post: /{slug}/
+ * Public blog URLs:
+ * Post: /blog/{slug}/
  * Tag: /tag/{slug}/
  * Category: /category/{parent}/{child}/
  * Archive: /{year}/{month}/
+ * Index: /blog/
  */
 
 function withTrailingSlash(path: string): string {
@@ -39,10 +40,10 @@ export function blogTagPath(slug: string): string {
   return withTrailingSlash(`/tag/${clean}`);
 }
 
-/** e.g. /modular-salon-furniture-design-trends/ */
+/** e.g. /blog/modular-salon-furniture-design-trends/ */
 export function blogPostPath(slug: string): string {
   const clean = slug.replace(/^\/+|\/+$/g, "");
-  return withTrailingSlash(`/${clean}`);
+  return withTrailingSlash(`/blog/${clean}`);
 }
 
 /** Main blog index (listing / search) */

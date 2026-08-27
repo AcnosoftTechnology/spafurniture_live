@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { AboutPageView } from "@/components/site/about/about-page-view";
 import {
   buildAboutPageMetadata,
@@ -8,11 +8,7 @@ import {
 } from "@/features/about/get-about-data";
 import { getPostBySlug } from "@/lib/services/blog.service";
 import { getCategoryBySlug, listCategoriesForProductNav } from "@/lib/services/category.service";
-import {
-  BlogPostPublicPage,
-  buildBlogPostMetadata,
-  normalizeBlogPostSlug,
-} from "@/features/blog/blog-post-public-page";
+import { normalizeBlogPostSlug } from "@/features/blog/blog-post-public-page";
 import { buildProductNavCategories } from "@/lib/product-nav-categories";
 import { countProducts, listProducts } from "@/lib/services/product.service";
 import { CategoryNav } from "@/components/site/category-nav";
@@ -32,6 +28,7 @@ import { buildCategoryPageSchemas } from "@/lib/seo/build-schemas";
 import { JsonLd } from "@/components/site/seo/json-ld";
 import { mediaUrl } from "@/lib/utils";
 import { categoryPath } from "@/lib/paths";
+import { blogPostPath } from "@/lib/blog-paths";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 3600;
@@ -69,6 +66,7 @@ export async function generateStaticParams() {
         where: { status: "PUBLISHED" },
         select: { slug: true },
       }),
+      // Keep published post slugs so old /{slug}/ URLs can permanently redirect.
       prisma.blogPost.findMany({
         where: { status: "PUBLISHED" },
         select: { slug: true },
@@ -88,8 +86,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (RESERVED.includes(slug) || isBlogArchiveYearSegment(slug)) return {};
-  const postMeta = await buildBlogPostMetadata(normalizeBlogPostSlug(slug));
-  if (Object.keys(postMeta).length > 0) return postMeta;
+  // Old root-level blog URLs redirect in the page; skip post metadata here.
+  const post = await getPostBySlug(normalizeBlogPostSlug(slug)).catch(() => null);
+  if (post) return {};
   if (await isAboutPageSlug(slug)) return buildAboutPageMetadata();
   if (await isRegionalPageSlug(slug)) return buildRegionalPageMetadata(slug);
   const category = await getCategoryBySlug(slug).catch(() => null);
@@ -119,8 +118,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   if (RESERVED.includes(slug) || isBlogArchiveYearSegment(slug)) notFound();
 
+  // Legacy /{post-slug}/ → /blog/{post-slug}/ (permanent)
   const post = await getPostBySlug(normalizeBlogPostSlug(slug)).catch(() => null);
-  if (post) return <BlogPostPublicPage slug={slug} />;
+  if (post) permanentRedirect(blogPostPath(post.slug));
 
   if (await isAboutPageSlug(slug)) {
     const { content } = await getAboutPageData();
