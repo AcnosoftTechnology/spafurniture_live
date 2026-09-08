@@ -130,11 +130,6 @@ const nextConfig: NextConfig = {
       permanent: true,
      },
      {
-      source: "/massage-tables",
-      destination: "/massage-beds/",
-      permanent: true,
-     },
-     {
         source: "/product/:slug",
         destination: "/products/:slug/",
         permanent: true,
