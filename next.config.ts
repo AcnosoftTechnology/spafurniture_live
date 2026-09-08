@@ -130,6 +130,62 @@ const nextConfig: NextConfig = {
       permanent: true,
      },
      {
+        source: "/products/electric-spa-bed-isa/",
+        destination: "https://www.spafurniture.com/products/isa-electric-spa-table/",
+        permanent: true,
+      },
+      {
+        source: "/electric-spa-bed-marut/",
+        destination: "https://www.spafurniture.com/product/marut-electric-spa-table/",
+        permanent: true,
+      },
+      {
+        source: "/electric-massage-bed-mudit/",
+        destination: "https://www.spafurniture.com/product/mudit-electric-spa-table/",
+        permanent: true,
+      },
+      {
+        source: "/ayurveda-table/",
+        destination: "https://www.spafurniture.com/product/ayurveda-bed/",
+        permanent: true,
+      },
+      {
+        source: "/arindam-spa-massage-table/",
+        destination: "https://www.spafurniture.com/products/arindam-spa-massage-bed/",
+        permanent: true,
+      },
+      {
+        source: "/facial-massage-table-tripti/",
+        destination: "https://www.spafurniture.com/product/tripti-facial-massage-bed/",
+        permanent: true,
+      },
+      {
+        source: "/portable-massage-tables-akriti/",
+        destination: "https://www.spafurniture.com/product/akriti-portable-massage-bed/",
+        permanent: true,
+      },
+      {
+        source: "/portable-reiki-massage-table/",
+        destination: "https://www.spafurniture.com/product/soumaya-portable-massage-bed/",
+        permanent: true,
+      },
+      {
+        source: "/asmit-tilt-massage-table/",
+        destination: "https://www.spafurniture.com/product/asmit-tilt-portable-massage-bed/",
+        permanent: true,
+      },
+      {
+        source: "/sparsh-pre-natal-massage-table/",
+        destination: "https://www.spafurniture.com/product/sparsh-pre-natal-portable-massage-bed/",
+        permanent: true,
+      },
+      {
+        source: "/folding-massage-table/",
+        destination: "https://www.spafurniture.com/product/aluminium-folding-massage-bed/",
+        permanent: true,
+      },
+
+     {
         source: "/product/:slug",
         destination: "/products/:slug/",
         permanent: true,
