@@ -130,6 +130,11 @@ const nextConfig: NextConfig = {
       permanent: true,
      },
      {
+        source: "/products/luxury-pedicure-station/",
+        destination: "https://www.spafurniture.com/products/luxury-pedicure-chair/",
+        permanent: true,
+      },
+     {
         source: "/products/electric-spa-bed-isa/",
         destination: "https://www.spafurniture.com/products/isa-electric-spa-table/",
         permanent: true,
